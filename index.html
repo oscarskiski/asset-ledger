@@ -1,0 +1,1425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f2f2f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e0f13" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Asset Ledger">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%232f6688'/%3E%3Cpath d='M14 50V30l10 6v-6l10 6V20h7l3-7h3l1 7v30z' fill='none' stroke='white' stroke-width='3.5' stroke-linejoin='round'/%3E%3C/svg%3E">
+<title>Asset Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght,SOFT@9..144,400..600,100&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+/* Layout: one iOS-style column (max 640px) — side switch at top, summary card, filter chips, inset-grouped list, floating add button, bottom sheets for every form. */
+:root{
+  --bg:#f2f2f6; --surface:#ffffff; --surface-2:#f7f7fa; --line:rgba(60,60,80,.12); --line-strong:rgba(60,60,80,.2);
+  --fg:#16171c; --fg-2:#5c5f6b; --fg-3:#8d909b;
+  --biz:#2f6688; --biz-soft:#e3edf4; --me:#7b4f8f; --me-soft:#f0e7f3;
+  --good:#2e7d55; --warn:#b06a12; --warn-soft:#fbefdc; --bad:#c23d3d; --bad-soft:#fae5e5;
+  --shadow:0 1px 2px rgba(20,22,40,.04),0 6px 24px rgba(20,22,40,.06);
+  --scrim:rgba(14,15,22,.32);
+  --f-ui:"Figtree",-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  --f-num:"Fraunces","New York",Georgia,serif;
+  --r-card:20px; --r-row:14px;
+  --accent:var(--biz); --accent-soft:var(--biz-soft);
+  --s1:#1f6fa8; --s2:#b8741c;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e0f13; --surface:#1b1c22; --surface-2:#23242b; --line:rgba(235,235,245,.09); --line-strong:rgba(235,235,245,.16);
+  --fg:#f2f2f5; --fg-2:#a7a9b4; --fg-3:#757884;
+  --biz:#7db4d8; --biz-soft:#1d2c37; --me:#c79bdb; --me-soft:#2c2133;
+  --good:#6fcf98; --warn:#e9a54a; --warn-soft:#33270f; --bad:#ef7b7b; --bad-soft:#381c1c;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35); --scrim:rgba(0,0,0,.55); --s1:#4f9ad6; --s2:#be7f2c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e0f13; --surface:#1b1c22; --surface-2:#23242b; --line:rgba(235,235,245,.09); --line-strong:rgba(235,235,245,.16);
+  --fg:#f2f2f5; --fg-2:#a7a9b4; --fg-3:#757884;
+  --biz:#7db4d8; --biz-soft:#1d2c37; --me:#c79bdb; --me-soft:#2c2133;
+  --good:#6fcf98; --warn:#e9a54a; --warn-soft:#33270f; --bad:#ef7b7b; --bad-soft:#381c1c;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35); --scrim:rgba(0,0,0,.55); --s1:#4f9ad6; --s2:#be7f2c; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:16px;line-height:1.4;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 120px}
+body.side-me{--accent:var(--me);--accent-soft:var(--me-soft)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.num{font-variant-numeric:tabular-nums}
+svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);
+  margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px)));padding:10px max(16px,env(safe-area-inset-left,0px)) 10px}
+.top-in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:10px}
+.seg{flex:1;display:grid;grid-template-columns:1fr 1fr;background:var(--line);border-radius:11px;padding:2px;position:relative}
+.seg button{position:relative;z-index:1;height:34px;border-radius:9px;font-size:14px;font-weight:600;color:var(--fg-2);display:flex;align-items:center;justify-content:center;gap:6px;transition:color .2s}
+.seg button svg.i{width:16px;height:16px}
+.seg button[aria-pressed="true"]{color:var(--fg)}
+.seg .thumb{position:absolute;top:2px;bottom:2px;left:2px;width:calc(50% - 2px);background:var(--surface);border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04);transition:transform .32s cubic-bezier(.3,.7,.2,1)}
+body.side-me .seg .thumb{transform:translateX(100%)}
+.icon-btn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--accent);background:var(--surface);box-shadow:0 0 0 .5px var(--line)}
+
+/* titles */
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-top:6px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:6px}
+.eyebrow svg.i{width:14px;height:14px}
+h1{font-size:34px;line-height:1.05;letter-spacing:-.02em;font-weight:700;margin:4px 0 0;text-wrap:balance}
+.sub{color:var(--fg-2);font-size:14px;margin-top:4px}
+
+/* summary card */
+.hero{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow);padding:20px;display:flex;flex-direction:column;gap:16px;overflow:hidden;position:relative}
+.hero::before{content:"";position:absolute;inset:0 0 auto 0;height:120px;background:linear-gradient(180deg,var(--accent-soft),transparent);opacity:.9;pointer-events:none}
+.hero>*{position:relative}
+.big-label{font-size:13px;color:var(--fg-2);font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.big{font-family:var(--f-num);font-variation-settings:"SOFT" 100,"opsz" 96;font-weight:500;font-size:clamp(36px,10vw,48px);line-height:1;letter-spacing:-.02em;margin-top:6px;font-variant-numeric:tabular-nums lining-nums}
+.big .c{font-size:.5em;color:var(--fg-3);letter-spacing:0}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{background:var(--surface-2);border-radius:14px;padding:11px 12px;min-width:0}
+.stat b{display:block;font-family:var(--f-num);font-variation-settings:"SOFT" 100,"opsz" 24;font-weight:500;font-size:18px;font-variant-numeric:tabular-nums lining-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat>span{font-size:12px;color:var(--fg-2)}
+.stats.four{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:560px){.stats.four{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.stat.pos b{color:var(--good)} .stat.neg b{color:var(--bad)}
+.alerts{display:flex;flex-direction:column;gap:8px}
+.alert{display:flex;gap:10px;align-items:flex-start;background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:13.5px;font-weight:500;text-align:left;width:100%}
+.alert svg.i{width:18px;height:18px;margin-top:1px}
+.alert u{text-decoration:none;font-weight:700}
+
+/* breakdown */
+.section-h{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px;margin-bottom:-8px}
+.section-h h2{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-2);margin:0}
+.section-h button{font-size:14px;font-weight:600;color:var(--accent)}
+.card{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow);overflow:hidden}
+.brk{display:flex;flex-direction:column}
+.brk-row{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:13px 16px;text-align:left;width:100%;position:relative}
+.brk-row+.brk-row::before{content:"";position:absolute;top:0;left:40px;right:0;height:1px;background:var(--line)}
+.brk-row .dot{width:10px;height:10px;border-radius:50%}
+.brk-row .nm{font-weight:600;font-size:15px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brk-row .amt{font-weight:600;font-size:15px}
+.brk-row .meta{grid-column:2/4;display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--fg-2)}
+.bar{flex:1;height:5px;background:var(--surface-2);border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:5px}
+.brk-row[aria-pressed="true"]{background:var(--accent-soft)}
+
+/* months chart */
+.months{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px;align-items:end;height:92px;padding:0 2px}
+.months .m{display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.months .m i{display:block;width:100%;max-width:18px;border-radius:5px 5px 3px 3px;background:var(--accent);opacity:.85;min-height:3px}
+.months .m.zero i{background:var(--line-strong);opacity:1}
+.months .m span{font-size:10.5px;color:var(--fg-3);font-weight:600}
+
+/* toolbar */
+.tools{display:flex;flex-direction:column;gap:10px}
+.search{display:flex;align-items:center;gap:8px;background:var(--line);border-radius:12px;padding:0 12px;height:40px;color:var(--fg-3)}
+.search input{flex:1;min-width:0;background:none;border:0;outline:0;font-size:16px;color:var(--fg)}
+.search input::placeholder{color:var(--fg-3)}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px)));padding:2px max(16px,env(safe-area-inset-left,0px))}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:34px;padding:0 14px;border-radius:17px;background:var(--surface);box-shadow:0 0 0 .5px var(--line-strong);font-size:14px;font-weight:600;color:var(--fg-2);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);box-shadow:none}
+.chip .n{font-weight:500;opacity:.7;font-size:12.5px}
+.sortrow{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--fg-2);padding:0 4px}
+.sortrow select{background:none;border:0;color:var(--accent);font-weight:600;font-size:13px;text-align:right;-webkit-appearance:none;appearance:none;padding-right:2px}
+
+/* lists */
+.list{display:flex;flex-direction:column}
+.month-h{font-size:13px;font-weight:600;color:var(--fg-2);padding:16px 4px 8px;display:flex;justify-content:space-between}
+.month-h:first-child{padding-top:0}
+.row{display:flex;align-items:center;gap:12px;padding:12px 16px;width:100%;text-align:left;position:relative;min-height:62px}
+.row+.row::before{content:"";position:absolute;top:0;right:0;left:68px;height:1px;background:var(--line)}
+.row:active{background:var(--surface-2)}
+.row .badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;font-weight:700;font-size:15px}
+.row .thumb{width:56px;height:56px;border-radius:12px;object-fit:cover;flex:none;background:var(--surface-2);display:grid;place-items:center;color:var(--fg-3);overflow:hidden}
+.row .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.row.mach+.row.mach::before{left:84px}
+.row .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.row .t1{font-weight:600;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .t2{font-size:13px;color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .rt{text-align:right;display:flex;flex-direction:column;gap:2px;align-items:flex-end;flex:none}
+.row .rt b{font-weight:600;font-size:15px}
+.row .rt small{font-size:12px;color:var(--fg-3)}
+.tag{display:inline-flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;border-radius:6px;padding:2px 6px}
+.tag.repair{background:var(--warn-soft);color:var(--warn)} .tag.sold{background:var(--surface-2);color:var(--fg-3)} .tag.standby{background:var(--accent-soft);color:var(--accent)}
+
+.empty{padding:36px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty .orb{width:64px;height:64px;border-radius:20px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.empty .orb svg.i{width:30px;height:30px}
+.empty h3{margin:4px 0 0;font-size:18px}
+.empty p{margin:0;color:var(--fg-2);font-size:14.5px;max-width:34ch}
+.btn{height:46px;padding:0 20px;border-radius:14px;background:var(--accent);color:#fff;font-weight:600;font-size:16px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+:root[data-theme="dark"] .btn{color:#0e0f13}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn{color:#0e0f13}}
+.btn.ghost{background:var(--accent-soft);color:var(--accent)}
+.btn.danger{background:var(--bad-soft);color:var(--bad)}
+.btn[disabled]{opacity:.45}
+.note{font-size:12.5px;color:var(--fg-3);text-align:center;padding:4px 12px;display:flex;justify-content:center;gap:6px;align-items:center}
+.note svg.i{width:14px;height:14px}
+
+.fab{position:fixed;right:max(20px,calc(env(safe-area-inset-right,0px) + 16px));bottom:calc(env(safe-area-inset-bottom,0px) + 24px);width:58px;height:58px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;box-shadow:0 8px 24px color-mix(in srgb,var(--accent) 45%,transparent),0 2px 6px rgba(0,0,0,.15);z-index:30;transition:transform .2s}
+.fab:active{transform:scale(.94)}
+.fab svg.i{width:26px;height:26px;stroke-width:2.2}
+:root[data-theme="dark"] .fab{color:#0e0f13}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .fab{color:#0e0f13}}
+
+/* privacy blur */
+body.hide-amts .amt-v{filter:blur(7px);transition:filter .2s}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:50;opacity:0;transition:opacity .25s}
+.scrim.on{opacity:1}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;max-height:92%;display:flex;flex-direction:column;background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.2);transform:translateY(105%);transition:transform .36s cubic-bezier(.25,.8,.25,1);max-width:680px;margin:0 auto}
+.sheet.on{transform:none}
+.sheet-h{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:8px 16px 10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));position:relative}
+.sheet-h::before{content:"";position:absolute;top:6px;left:50%;width:36px;height:5px;border-radius:3px;background:var(--line-strong);transform:translateX(-50%)}
+.sheet-h h3{margin:14px 0 0;font-size:17px;font-weight:600;text-align:center;white-space:nowrap}
+.sheet-h .l,.sheet-h .r{margin-top:14px;font-size:16.5px;color:var(--accent);font-weight:500}
+.sheet-h .l{justify-self:start} .sheet-h .r{justify-self:end;font-weight:700}
+.sheet-h .r[disabled]{opacity:.4}
+.sheet-b{overflow-y:auto;padding:6px max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 28px) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:22px;-webkit-overflow-scrolling:touch}
+
+/* form groups */
+.fg{display:flex;flex-direction:column;gap:6px}
+.fg>label.cap,.fg>.cap{font-size:13px;color:var(--fg-2);padding:0 16px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.fg .foot{font-size:12.5px;color:var(--fg-3);padding:0 16px}
+.inset{background:var(--surface);border-radius:var(--r-row);overflow:hidden}
+.f{display:flex;align-items:center;gap:12px;padding:0 16px;min-height:48px;position:relative}
+.f+.f::before{content:"";position:absolute;top:0;left:16px;right:0;height:1px;background:var(--line)}
+.f>span{flex:none;width:38%;font-size:15.5px;color:var(--fg)}
+.f input,.f select,.f textarea{flex:1;min-width:0;background:none;border:0;outline:0;font-size:16px;text-align:right;color:var(--fg-2);padding:12px 0}
+.f input:focus,.f select:focus,.f textarea:focus{color:var(--fg)}
+.f select{-webkit-appearance:none;appearance:none;direction:rtl}
+.f select option{direction:ltr}
+.f.full input,.f.full textarea{text-align:left;color:var(--fg)}
+.f textarea{resize:none;min-height:84px;line-height:1.4}
+.f input::placeholder,.f textarea::placeholder{color:var(--fg-3)}
+.f.money input{font-variant-numeric:tabular-nums;font-weight:600;color:var(--fg)}
+.f .pre{color:var(--fg-3);font-weight:600}
+.toggle{position:relative;width:51px;height:31px;flex:none;margin-left:auto}
+.toggle input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.toggle i{position:absolute;inset:0;border-radius:16px;background:var(--line-strong);transition:background .2s}
+.toggle i::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.2);transition:transform .25s}
+.toggle input:checked+i{background:var(--good)}
+.toggle input:checked+i::after{transform:translateX(20px)}
+.toggle input:focus-visible+i{outline:2px solid var(--accent);outline-offset:2px}
+.swatches{display:flex;gap:10px;flex-wrap:wrap;padding:12px 16px}
+.sw{width:30px;height:30px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--fg)}
+.err{color:var(--bad);font-size:13px;padding:0 16px}
+
+/* photos */
+.photos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px}
+.ph{position:relative;aspect-ratio:1;max-width:100%;border-radius:12px;overflow:hidden;background:var(--surface-2)}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .x{position:absolute;top:5px;right:5px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center}
+.ph .x svg.i{width:14px;height:14px;stroke-width:2.4}
+.ph .cov{position:absolute;left:6px;bottom:6px;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:rgba(0,0,0,.55);color:#fff;padding:2px 6px;border-radius:5px}
+.ph.add{display:grid;place-items:center;color:var(--accent);background:var(--accent-soft);border:1.5px dashed color-mix(in srgb,var(--accent) 40%,transparent)}
+.ph.add label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12.5px;font-weight:600;cursor:pointer}
+.ph.add input{position:absolute;opacity:0;width:1px;height:1px}
+.ph.busy::after{content:"";position:absolute;inset:0;background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.spin{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--line-strong);border-top-color:var(--accent);animation:sp .8s linear infinite;position:absolute;top:50%;left:50%;margin:-11px 0 0 -11px;z-index:1}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* detail */
+.gallery{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:var(--r-card)}
+.gallery::-webkit-scrollbar{display:none}
+.gallery{align-items:center}
+.gallery .gi{flex:none;width:100%;max-width:100%;border-radius:var(--r-card);overflow:hidden;scroll-snap-align:center;background:var(--surface-2);position:relative;cursor:zoom-in;display:flex;justify-content:center}
+.gallery .gi img{display:block;max-width:100%;width:auto;height:auto;max-height:min(48vh,360px);object-fit:contain}
+.sheet-b>*{flex-shrink:0}
+.ph-hero{grid-column:1/-1;border-radius:12px;overflow:hidden;background:var(--surface-2);display:flex;justify-content:center}
+.ph-hero img{display:block;max-width:100%;height:auto;max-height:min(44vh,320px);object-fit:contain}
+.gallery .gi .ct{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:600;padding:4px 9px;border-radius:12px;display:flex;align-items:center;gap:5px;backdrop-filter:blur(6px)}
+.gallery .gi .ct svg.i{width:13px;height:13px}
+.kv{display:flex;justify-content:space-between;gap:16px;padding:13px 16px;position:relative;font-size:15.5px}
+.kv+.kv::before{content:"";position:absolute;top:0;left:16px;right:0;height:1px;background:var(--line)}
+.kv>span{color:var(--fg-2);flex:none}
+
+/* photo viewer */
+.viewer{position:fixed;inset:0;z-index:90;background:#000;color:#fff;opacity:0;transition:opacity .22s}
+.viewer.on{opacity:1}
+.vw-track{position:absolute;inset:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior:contain}
+.vw-track::-webkit-scrollbar{display:none}
+.vw-slide{flex:none;width:100%;height:100%;scroll-snap-align:center;position:relative}
+.vw-slide img{position:absolute;display:block;object-fit:contain;
+  top:calc(env(safe-area-inset-top,0px) + 68px);left:max(12px,env(safe-area-inset-left,0px));
+  width:calc(100% - max(12px,env(safe-area-inset-left,0px)) - max(12px,env(safe-area-inset-right,0px)));
+  height:calc(100% - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 140px)}
+.vw-top,.vw-bot{position:absolute;left:0;right:0;display:flex;align-items:center;gap:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));z-index:2;pointer-events:none}
+.vw-top{top:0;padding-top:calc(env(safe-area-inset-top,0px) + 14px);padding-bottom:14px;background:linear-gradient(rgba(0,0,0,.6),transparent)}
+.vw-bot{bottom:0;justify-content:center;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 18px);padding-top:14px;background:linear-gradient(transparent,rgba(0,0,0,.6))}
+.vw-top>*,.vw-bot>*{pointer-events:auto}
+.vw-t{flex:1;min-width:0;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vw-n{font-size:13px;opacity:.75;font-variant-numeric:tabular-nums}
+.vw-b{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;display:grid;place-items:center;backdrop-filter:blur(10px)}
+.vw-open{height:36px;padding:0 14px;border-radius:18px;background:rgba(255,255,255,.16);color:#fff;font-size:14px;font-weight:600;display:inline-flex;align-items:center;text-decoration:none;backdrop-filter:blur(10px)}
+.vw-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2}
+.vw-nav.p{left:max(12px,env(safe-area-inset-left,0px))} .vw-nav.n{right:max(12px,env(safe-area-inset-right,0px))}
+.vw-nav.p svg.i{transform:scaleX(-1)}
+.vw-nav[hidden]{display:none}
+@media (hover:none){.vw-nav{display:none}}
+.kv b{font-weight:500;text-align:right;min-width:0;overflow-wrap:anywhere}
+.vals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.vals .val{padding:12px;min-width:0}
+.vals .val b{font-size:clamp(16px,4.4vw,22px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vals .val.empty b{color:var(--fg-3)}
+.val{background:var(--surface);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+.val>span{font-size:12.5px;color:var(--fg-2);display:block}
+.val small{display:block;margin-top:2px}
+.val b{font-family:var(--f-num);font-variation-settings:"SOFT" 100,"opsz" 36;font-weight:500;font-size:22px;font-variant-numeric:tabular-nums lining-nums;display:block;margin-top:4px}
+.val small{font-size:12px;color:var(--fg-3)}
+.notes{padding:14px 16px;font-size:15px;white-space:pre-wrap;overflow-wrap:anywhere}
+.d-title{display:flex;flex-direction:column;gap:4px}
+.d-title h2{margin:0;font-size:26px;letter-spacing:-.015em;line-height:1.15;text-wrap:balance}
+.d-title p{margin:0;color:var(--fg-2);font-size:14.5px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* action sheet */
+.as{position:fixed;left:0;right:0;bottom:0;z-index:61;padding:0 max(10px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 10px) max(10px,env(safe-area-inset-left,0px));transform:translateY(110%);transition:transform .3s cubic-bezier(.25,.8,.25,1);max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.as.on{transform:none}
+.as .grp{background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:14px;overflow:hidden}
+.as .msg{padding:14px 16px;font-size:13px;color:var(--fg-2);text-align:center;border-bottom:1px solid var(--line)}
+.as button{display:block;width:100%;height:56px;font-size:19px;color:var(--accent)}
+.as button.d{color:var(--bad)}
+.as button.c{font-weight:600}
+.as-scrim{z-index:60}
+
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);transform:translate(-50%,20px);opacity:0;background:var(--fg);color:var(--bg);font-size:14px;font-weight:600;padding:10px 16px;border-radius:20px;z-index:80;transition:all .25s;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+.loading{padding:40px;display:flex;justify-content:center;position:relative;height:100px}
+
+/* value over time */
+.vt{padding:16px;display:flex;flex-direction:column;gap:12px}
+.vt-top{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.seg2{display:inline-grid;grid-auto-flow:column;background:var(--line);border-radius:10px;padding:2px}
+.seg2 button{height:30px;padding:0 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--fg-2)}
+.seg2 button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.vt-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--fg-2)}
+.vt-legend span,.vt-first span{display:inline-flex;align-items:center;gap:6px}
+.vt-legend i,.vt-first i,.vt-tip i{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.vt-chart{position:relative;min-height:120px;overflow:hidden}
+.vt-chart svg{display:block;max-width:100%;height:auto;touch-action:pan-y}
+.vt-chart .grid{stroke:var(--line);stroke-width:1}
+.vt-chart .yl,.vt-chart .xl{fill:var(--fg-3);font-size:11px;font-family:var(--f-ui);font-variant-numeric:tabular-nums}
+.vt-chart .xh{stroke:var(--line-strong);stroke-width:1}
+.vt-chart .bar{transition:opacity .15s}
+.vt-chart .bar.dim{opacity:.35}
+.vt-tip{position:absolute;top:0;pointer-events:none;background:var(--surface);box-shadow:var(--shadow),0 0 0 .5px var(--line-strong);border-radius:10px;padding:8px 10px;font-size:12.5px;min-width:150px;z-index:2}
+.vt-tip .th{font-weight:700;margin-bottom:4px}
+.vt-tip .tr{display:flex;align-items:center;gap:6px;justify-content:space-between}
+.vt-tip .tr span{color:var(--fg-2);flex:1}
+.vt-tip .tr b{font-variant-numeric:tabular-nums;font-weight:600}
+.vt-foot{margin:0;font-size:12.5px;color:var(--fg-3)}
+.vt-tip .tf{margin-top:5px;font-size:11.5px;color:var(--accent);font-weight:600}
+.vt-empty{font-size:13.5px;color:var(--fg-2);padding:6px 2px 2px}
+.vt-first{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.vt-first>div{background:var(--surface-2);border-radius:12px;padding:10px 12px;min-width:0}
+.vt-first span{font-size:12px;color:var(--fg-2)}
+.vt-first b{display:block;margin-top:4px;font-family:var(--f-num);font-variation-settings:"SOFT" 100,"opsz" 24;font-weight:500;font-size:17px;font-variant-numeric:tabular-nums lining-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* qr */
+.qr-row{display:flex;gap:14px;align-items:center;padding:14px 16px}
+.qr-row>svg{width:96px;height:96px;flex:none;border-radius:8px;box-shadow:0 0 0 1px var(--line)}
+.qr-row b{display:block;font-size:15px}
+.qr-row p{margin:2px 0 10px;font-size:13px;color:var(--fg-2)}
+.qr-row .btn{height:38px;font-size:14px;padding:0 14px}
+.qr-miss{font-size:12px;color:var(--fg-3)}
+.lbl-prev{display:flex;flex-direction:column;gap:8px;padding:12px}
+.lbl{display:flex;gap:10px;align-items:center;background:#fff;color:#111;border-radius:6px;padding:8px 10px;box-shadow:0 0 0 1px var(--line-strong);max-width:300px}
+.lbl svg{width:64px;height:64px;flex:none}
+.lbl b{display:block;font-size:13px}
+.lbl span{display:block;font-size:12px;font-weight:600;line-height:1.2}
+.lbl small{display:block;font-size:10.5px;color:#555;margin-top:2px}
+.st-mode{align-self:flex-start}
+.pick-bar{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--fg-2);padding:2px 4px}
+.pick-bar button{color:var(--accent);font-weight:600;font-size:13px}
+.pick-list{max-height:min(46vh,380px);overflow-y:auto}
+.pick-row{display:flex;align-items:center;gap:12px;padding:10px 16px;position:relative;cursor:pointer}
+.pick-row+.pick-row::before{content:"";position:absolute;top:0;left:46px;right:0;height:1px;background:var(--line)}
+.pick-row input{width:20px;height:20px;accent-color:var(--accent);flex:none;margin:0}
+.pk-t{min-width:0;display:flex;flex-direction:column}
+.pk-t b{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pk-t small{font-size:12.5px;color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yearchip{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--accent-soft);color:var(--accent);border-radius:12px;padding:10px 12px 10px 14px;font-size:14px;font-weight:600}
+.yearchip span{min-width:0}
+.yearchip button{color:var(--accent);font-weight:600;font-size:13.5px;flex:none;display:flex;align-items:center;gap:4px}
+.yearchip button svg.i{width:16px;height:16px}
+.vt-chart .bar.sel{opacity:1}
+.vt-chart .hit{cursor:pointer}
+.vt-foot button{color:var(--accent);font-weight:600;font-size:inherit;text-decoration:underline;text-underline-offset:2px}
+.list-actions{display:flex;justify-content:flex-end;margin-top:-6px}
+.list-actions button{font-size:13.5px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:6px}
+.list-actions svg.i{width:16px;height:16px}
+.login{max-width:400px;width:100%;margin:12vh auto 0;padding:24px 20px;display:flex;flex-direction:column;gap:14px;text-align:left}
+.login .brand{display:flex;align-items:center;gap:14px;margin-bottom:4px}
+.login .logo{width:52px;height:52px;border-radius:15px;background:var(--accent);color:#fff;display:grid;place-items:center;flex:none}
+.login .logo svg.i{width:28px;height:28px}
+.login h2{margin:0;font-size:24px;letter-spacing:-.01em}
+.login p{margin:2px 0 0;color:var(--fg-2);font-size:14.5px}
+.login .inset{background:var(--surface-2)}
+.login .orb{width:56px;height:56px;border-radius:18px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.login .err{padding:0 4px}
+.linkbtn{color:var(--accent);font-weight:600;font-size:14.5px;align-self:center;padding:6px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation-duration:.01ms!important}}
+@media (min-width:700px){h1{font-size:38px}}
+</style>
+</head>
+<body>
+<div class="top"><div class="top-in">
+  <div class="seg" role="group" aria-label="Choose side">
+    <span class="thumb"></span>
+    <button id="tab-biz" aria-pressed="true"><svg class="i"><use href="#i-factory"/></svg>Business</button>
+    <button id="tab-me" aria-pressed="false"><svg class="i"><use href="#i-lock"/></svg>Personal</button>
+  </div>
+  <button class="icon-btn" id="eye" aria-label="Hide amounts" title="Hide amounts"><svg class="i"><use href="#i-eye"/></svg></button>
+  <button class="icon-btn" id="more" aria-label="Export and settings" title="Export and settings"><svg class="i"><use href="#i-dots"/></svg></button>
+</div></div>
+
+<main class="wrap" id="app"><div class="loading"><span class="spin"></span></div></main>
+<button class="fab" id="fab" aria-label="Add" hidden><svg class="i"><use href="#i-plus"/></svg></button>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol>
+  <symbol id="i-factory" viewBox="0 0 24 24"><path d="M3 20.5V10l5 3V10l5 3V6.5h3.5L18 3h1.5l.5 3.5v14H3Z"/><path d="M7 17h2M12 17h2"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 6a9.6 9.6 0 0 1 1.4-.1C18 5.9 21.5 12 21.5 12a17 17 0 0 1-2.7 3.4M6.6 6.9A16 16 0 0 0 2.5 12S6 18.5 12 18.5a9 9 0 0 0 4.4-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18" cy="12" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.4-2h4.6l1.4 2h1.8A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5Z"/><circle cx="12" cy="12.5" r="3.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 2.8 19.5h18.4Z"/><path d="M12 10v4.5M12 17.2v.1"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3.5h12v17l-2.5-1.6-2 1.6-1.5-1.2-1.5 1.2-2-1.6L6 20.5Z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
+</svg>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+(() => {
+"use strict";
+/* ---------- constants & helpers ---------- */
+const DEFAULT_DEPTS = ["Steel","Wood machining","Upholstery","Finishing","Workshop & tools","Vehicles & forklifts","Office & IT"];
+const PALETTE = ["#4f7fa6","#5f9a7a","#c08a3e","#b45f6a","#7b6bb0","#3f9aa0","#a07a55","#6f7d8c"];
+const DEFAULT_GROUPS = [
+  {id:"g-home",name:"Home improvement",color:"#5f9a7a"},
+  {id:"g-veh",name:"Vehicles",color:"#4f7fa6"},
+  {id:"g-boat",name:"Boats",color:"#3f9aa0"},
+  {id:"g-fuel",name:"Fuel",color:"#c08a3e"}];
+const STATUS = {use:"In use",standby:"Standby",repair:"Needs repair",sold:"Sold / scrapped"};
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmt = new Intl.NumberFormat("en-ZA",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmt0 = new Intl.NumberFormat("en-ZA",{maximumFractionDigits:0});
+const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $ = s => document.querySelector(s);
+const money = (n, dec=true) => {
+  n = Number(n)||0; const neg = n<0; const v = Math.abs(n);
+  const s = dec ? fmt.format(v) : fmt0.format(v);
+  return `<span class="amt-v num">${neg?"−":""}R ${s}</span>`;
+};
+const bigMoney = n => {
+  n = Number(n)||0; const s = fmt.format(Math.abs(n)); const i = s.lastIndexOf(",");
+  const whole = i>-1? s.slice(0,i):s, cents = i>-1? s.slice(i):"";
+  return `<span class="amt-v">R ${whole}<span class="c">${cents}</span></span>`;
+};
+function parseAmount(v){
+  if (v==null) return NaN; let s = String(v).replace(/[R\s ]/gi,"");
+  if (!s) return NaN;
+  if (s.includes(",") && s.includes(".")) s = s.replace(/,/g,"");
+  else if (s.includes(",")) { const p = s.split(","); s = (p.length===2 && p[1].length<=2) ? p[0]+"."+p[1] : p.join(""); }
+  const n = Number(s); return isFinite(n) ? Math.round(n*100)/100 : NaN;
+}
+const amtInput = n => (n||n===0) && n!=="" ? fmt.format(n).replace(/ /g," ") : "";
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+const niceDate = iso => { if(!iso) return ""; const [y,m,d] = iso.split("-").map(Number); if(!y) return ""; return `${d?d+" ":""}${MONTHS[(m||1)-1]} ${y}`; };
+function ageOf(iso){
+  if(!iso) return ""; const [y,m,d]=iso.split("-").map(Number); const a=new Date(y,(m||1)-1,d||1), b=new Date();
+  let mo=(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth()); if(b.getDate()<a.getDate()) mo--;
+  if(mo<0) return ""; if(mo<1) return "this month"; const yr=Math.floor(mo/12), r=mo%12;
+  return [yr?`${yr} yr${yr>1?"s":""}`:"", r?`${r} mo`:""].filter(Boolean).join(" ") + " old";
+}
+const monthsSince = iso => { if(!iso) return Infinity; const d=new Date(iso); return (Date.now()-d.getTime())/(1000*60*60*24*30.44); };
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const store = { get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch{return d} }, set(k,v){ try{localStorage.setItem(k,JSON.stringify(v))}catch{} } };
+let toastT; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("on"),2400); }
+const photoUrl = id => `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${id}`;
+const initials = s => (s||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase();
+
+/* ---------- state ---------- */
+const S = {
+  side: store.get("al.side","biz"),
+  hide: store.get("al.hide",false),
+  db:null, user:null, assets:null, downloads:null, uid:null,
+  canWrite:true, canMe:true, ready:{biz:false,me:false}, failed:false,
+  machines:[], depts:DEFAULT_DEPTS.slice(), deptsDoc:false,
+  groups:DEFAULT_GROUPS.slice(), groupsDoc:false, entries:[],
+  ui:{ year:null, dept:"all", q:"", sort: store.get("al.sort","value"), group:"all", period: store.get("al.period","year"), meQ:"", vt: store.get("al.vt","history") },
+  history:[], histReady:false
+};
+
+/* ---------- Supabase connection ----------
+   STEP: paste your two values from Supabase → Project Settings → API (Data API) */
+const SUPABASE_URL = "PASTE-PROJECT-URL-HERE";        // looks like https://abcdefghijklm.supabase.co
+const SUPABASE_ANON_KEY = "PASTE-ANON-PUBLIC-KEY-HERE"; // the long "anon" / "public" key (starts with eyJ…)
+const BUCKET = "machine-photos";
+let sb = null;
+const configured = () => /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(SUPABASE_URL) && SUPABASE_ANON_KEY.length > 40;
+
+// A live copy of one table: loads every row, then reloads whenever anyone changes it.
+function liveTable(table){
+  const subs = new Set(); let rows = null, timer = null, chan = null;
+  async function load(){
+    const all = []; let from = 0;
+    for(;;){
+      const { data, error } = await sb.from(table).select("id,data").order("id").range(from, from+999);
+      if(error) throw error; all.push(...data); if(data.length < 1000) break; from += 1000;
+    }
+    rows = all; emit();
+  }
+  function emit(){ const snap = { docs: rows.map(r => ({ id:r.id, exists:true, data:()=>r.data||{} })) }; subs.forEach(f => f.next(snap)); }
+  function start(){
+    load().catch(e => subs.forEach(f => f.err && f.err(e)));
+    chan = sb.channel("rt-"+table)
+      .on("postgres_changes", { event:"*", schema:"public", table }, () => { clearTimeout(timer); timer = setTimeout(() => load().catch(()=>{}), 250); })
+      .subscribe();
+  }
+  return {
+    onSnapshot(next, err){ const f = { next, err }; subs.add(f); if(!chan) start(); else if(rows) next({ docs: rows.map(r => ({ id:r.id, exists:true, data:()=>r.data||{} })) }); return () => subs.delete(f); },
+    reload: () => load().catch(()=>{})
+  };
+}
+const LIVE = {};
+const getLive = t => LIVE[t] || (LIVE[t] = liveTable(t));
+document.addEventListener("visibilitychange", () => { if(!document.hidden && sb) Object.values(LIVE).forEach(l => l.reload()); });
+
+const DB = {
+  collection(t){ return { onSnapshot:(n,e)=>getLive(t).onSnapshot(n,e), doc:id=>DB.doc(t+"/"+id) }; },
+  doc(path){
+    const i = path.indexOf("/"), t = path.slice(0,i), id = path.slice(i+1);
+    const now = () => new Date().toISOString();
+    return {
+      async set(data){ const { error } = await sb.from(t).upsert({ id, data, updated_at:now() }); if(error) throw error; getLive(t).reload(); },
+      async update(patch){
+        const { data:r, error:e1 } = await sb.from(t).select("data").eq("id", id).maybeSingle(); if(e1) throw e1; if(!r) throw new Error("missing");
+        const { error } = await sb.from(t).update({ data:{ ...r.data, ...patch }, updated_at:now() }).eq("id", id); if(error) throw error; getLive(t).reload();
+      },
+      async delete(){ const { error } = await sb.from(t).delete().eq("id", id); if(error) throw error; getLive(t).reload(); },
+      onSnapshot(next, err){ return getLive(t).onSnapshot(snap => { const d = snap.docs.find(x => x.id === id); next(d ? { exists:true, data:d.data } : { exists:false, data:()=>undefined }); }, err); }
+    };
+  }
+};
+const ASSETS = {
+  async upload(blob){
+    const name = `${new Date().getFullYear()}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2,10)}.jpg`;
+    const { error } = await sb.storage.from(BUCKET).upload(name, blob, { contentType:"image/jpeg", cacheControl:"31536000", upsert:false });
+    if(error) throw error; return { id:name };
+  },
+  async delete(id){ if(id) await sb.storage.from(BUCKET).remove([id]); }
+};
+const DOWNLOADS = {
+  async save({ filename, data }){
+    const type = filename.endsWith(".csv") ? "text/csv;charset=utf-8" : filename.endsWith(".html") ? "text/html;charset=utf-8" : "application/octet-stream";
+    const blob = data instanceof Blob ? data : new Blob([data], { type });
+    const u = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = u; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 5000); return { status:"saved" };
+  }
+};
+
+/* ---------- boot ---------- */
+async function boot(){
+  applySide(); applyHide();
+  if(!configured() || !window.supabase){ S.failed = configured() ? "offline" : "config"; render(); return; }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
+  sb.auth.onAuthStateChange((ev, session) => {
+    if(ev === "PASSWORD_RECOVERY") setTimeout(newPasswordPrompt, 300);
+    if(ev === "SIGNED_OUT") location.reload();
+  });
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ S.failed = "login"; render(); return; }
+  startApp(session);
+}
+function startApp(session){
+  S.failed = false; S.user = session.user; S.uid = session.user.id;
+  S.canWrite = true; S.canMe = true; S.db = DB; S.assets = ASSETS; S.downloads = DOWNLOADS;
+  document.querySelector(".top").hidden = false;
+  const db = DB;
+  db.collection("machines").onSnapshot(snap=>{ S.machines = snap.docs.map(d=>({id:d.id,...d.data()})); S.ready.biz=true; render(); scheduleSnapshot(); if(!deepDone){ deepDone=true; handleDeepLink(); } }, ()=>{ S.ready.biz=true; render(); toast("Couldn’t load machines. Check your connection."); });
+  db.collection("history").onSnapshot(snap=>{ S.history=snap.docs.map(d=>({id:d.id,...d.data()})); S.histReady=true; if(S.side==="biz") drawValueChart(); scheduleSnapshot(); }, ()=>{ S.histReady=true; });
+  db.doc("meta/business").onSnapshot(s=>{ const d=s.exists?s.data():null; if(d&&Array.isArray(d.depts)&&d.depts.length){S.depts=d.depts.slice();S.deptsDoc=true;} render(); });
+  db.doc("personal_settings/"+S.uid).onSnapshot(s=>{ const d=s.exists?s.data():null; if(d&&Array.isArray(d.groups)&&d.groups.length){S.groups=d.groups.map(g=>({...g}));S.groupsDoc=true;} render(); });
+  entriesCol().onSnapshot(snap=>{ S.entries = snap.docs.map(d=>({id:d.id,...d.data()})); S.ready.me=true; render(); }, ()=>{ S.ready.me=true; S.canMe=false; render(); });
+  render();
+}
+const entriesCol = () => DB.collection("personal_entries");
+
+/* ---------- sign in ---------- */
+function loginView(){
+  document.querySelector(".top").hidden = true; $("#fab").hidden = true;
+  if(S.failed === "config") return `<div class="login card"><div class="orb"><svg class="i"><use href="#i-gear"/></svg></div><h2>Almost ready</h2><p>Paste your Supabase project URL and anon key into <b>index.html</b> (near the top of the script, at “STEP: paste your two values”) and upload it again.</p></div>`;
+  if(S.failed === "offline") return `<div class="login card"><div class="orb"><svg class="i"><use href="#i-warn"/></svg></div><h2>Can’t connect</h2><p>The app couldn’t load. Check your internet connection and refresh the page.</p></div>`;
+  return `<form class="login card" id="login" novalidate>
+    <div class="brand"><span class="logo"><svg class="i"><use href="#i-factory"/></svg></span><div><h2>Asset Ledger</h2><p>Sign in to continue</p></div></div>
+    <div class="inset">
+      <label class="f full"><input id="li-email" type="email" autocomplete="username" placeholder="Email" required></label>
+      <label class="f full"><input id="li-pass" type="password" autocomplete="current-password" placeholder="Password" required></label>
+    </div>
+    <div class="err" id="li-err" hidden></div>
+    <button class="btn" id="li-go" type="submit">Sign in</button>
+    <button class="linkbtn" id="li-forgot" type="button">Forgot password?</button>
+  </form>`;
+}
+function bindLogin(){
+  const f = $("#login"); if(!f) return;
+  const err = m => { const e=$("#li-err"); e.textContent=m; e.hidden=!m; };
+  f.onsubmit = async ev => {
+    ev.preventDefault(); err("");
+    const email=$("#li-email").value.trim(), password=$("#li-pass").value;
+    if(!email || !password){ err("Enter your email and password."); return; }
+    const b=$("#li-go"); b.disabled=true; b.textContent="Signing in…";
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    b.disabled=false; b.textContent="Sign in";
+    if(error){ err(/invalid/i.test(error.message) ? "That email and password don’t match. Try again or reset your password." : error.message); return; }
+    startApp(data.session);
+  };
+  $("#li-forgot").onclick = async () => {
+    const email=$("#li-email").value.trim(); if(!email){ err("Type your email above first, then tap “Forgot password?” again."); return; }
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    err(""); toast(error ? "Couldn’t send the email. Try again later." : "Check your email for a link to set a new password.");
+  };
+}
+function newPasswordPrompt(){
+  askText("Choose a new password", "New password (at least 8 characters)", "", async pw => {
+    if(!pw) return; if(pw.length < 8){ toast("Use at least 8 characters."); setTimeout(newPasswordPrompt, 400); return; }
+    const { error } = await sb.auth.updateUser({ password: pw });
+    toast(error ? "Couldn’t change the password. Try again." : "Password changed");
+  });
+}
+
+/* ---------- import a backup ---------- */
+function pickBackup(){
+  const inp=document.createElement("input"); inp.type="file"; inp.accept=".json,application/json";
+  inp.onchange=async()=>{ const file=inp.files[0]; if(!file) return;
+    let j; try{ j=JSON.parse(await file.text()); }catch{ toast("That file isn’t a backup file."); return; }
+    if(j.format!=="asset-ledger-backup"){ toast("That file isn’t an Asset Ledger backup."); return; }
+    const np=Object.keys(j.photos||{}).length, ne=(j.personal&&j.personal.entries||[]).length;
+    actionSheet(`Import ${j.machines.length} machines, ${np} photo${np===1?"":"s"}, ${(j.history||[]).length} month${(j.history||[]).length===1?"":"s"} of history${ne?` and ${ne} personal purchase${ne===1?"":"s"} (into your own private side)`:""}? Machines with the same ID are replaced.`,
+      [{label:"Import", run:()=>runImport(j)}]);
+  };
+  inp.click();
+}
+async function runImport(j){
+  PENDING.n++;
+  try{
+    const map={}; let k=0; const ids=Object.keys(j.photos||{});
+    for(const oid of ids){ k++; toast(`Uploading photos ${k} of ${ids.length}…`); const blob=await (await fetch(j.photos[oid])).blob(); map[oid]=(await ASSETS.upload(blob)).id; }
+    const rows=j.machines.map(m=>{ const { id, ...d } = m; const ph=d.photos||[], th=d.thumbs||[]; const keep=ph.map((p,i)=>[map[p],th[i]||""]).filter(x=>x[0]);
+      d.photos=keep.map(x=>x[0]); d.thumbs=keep.map(x=>x[1]); return { id, data:d }; });
+    for(let i=0;i<rows.length;i+=100){ toast(`Saving machines ${Math.min(i+100,rows.length)} of ${rows.length}…`); const { error } = await sb.from("machines").upsert(rows.slice(i,i+100)); if(error) throw error; }
+    if(j.meta && Object.keys(j.meta).length){ const { error } = await sb.from("meta").upsert({ id:"business", data:j.meta }); if(error) throw error; }
+    if((j.history||[]).length){ const { error } = await sb.from("history").upsert(j.history.map(h=>{ const { id, ...d } = h; return { id, data:d }; })); if(error) throw error; }
+    const pe=(j.personal&&j.personal.entries)||[];
+    if(pe.length){ const { error } = await sb.from("personal_entries").upsert(pe.map(e=>{ const { id, ...d } = e; return { id, data:d }; })); if(error) throw error; }
+    if(j.personal && j.personal.settings){ const { error } = await sb.from("personal_settings").upsert({ id:S.uid, data:j.personal.settings }); if(error) throw error; }
+    Object.values(LIVE).forEach(l=>l.reload());
+    toast(`Imported ${rows.length} machines`);
+  }catch(e){ toast("Import stopped: "+(e&&e.message||"unknown error")+". You can run it again safely."); }
+  PENDING.n--;
+}
+
+/* ---------- side + privacy ---------- */
+function applySide(){
+  document.body.classList.toggle("side-me", S.side==="me");
+  $("#tab-biz").setAttribute("aria-pressed", S.side==="biz"); $("#tab-me").setAttribute("aria-pressed", S.side==="me");
+}
+function applyHide(){
+  document.body.classList.toggle("hide-amts", S.hide);
+  $("#eye").innerHTML = `<svg class="i"><use href="#${S.hide?"i-eye-off":"i-eye"}"/></svg>`;
+  $("#eye").setAttribute("aria-label", S.hide?"Show amounts":"Hide amounts");
+}
+$("#tab-biz").onclick=()=>{ S.side="biz"; store.set("al.side","biz"); applySide(); render(); window.scrollTo({top:0}); };
+$("#tab-me").onclick=()=>{ S.side="me"; store.set("al.side","me"); applySide(); render(); window.scrollTo({top:0}); };
+$("#eye").onclick=()=>{ S.hide=!S.hide; store.set("al.hide",S.hide); applyHide(); };
+$("#fab").onclick=()=> S.side==="biz" ? machineForm(null) : entryForm(null);
+$("#more").onclick=()=> moreSheet();
+
+/* ---------- render ---------- */
+function render(){
+  const app = $("#app");
+  if(S.failed){ app.innerHTML = loginView(); bindLogin(); return; }
+  if(S.side==="biz") renderBiz(); else renderMe();
+}
+
+/* ===== BUSINESS ===== */
+function bizTotals(list){
+  let paid=0,repl=0,resale=0,resaleN=0,count=0,uninsN=0,uninsV=0,staleN=0;
+  for(const m of list){ if(m.status==="sold") continue; count++; paid+=+m.paid||0; repl+=+m.repl||0; if(+m.resale>0){resale+=+m.resale;resaleN++;}
+    if(!m.insured){uninsN++;uninsV+=+m.repl||0;} if((+m.repl||0)>0 && monthsSince(m.replUpdated||m.created)>12) staleN++; }
+  return {paid,repl,resale,resaleN,count,uninsN,uninsV,staleN};
+}
+function renderBiz(){
+  const app=$("#app"); $("#fab").hidden = !S.canWrite || !S.ready.biz;
+  if(!S.ready.biz){ app.innerHTML=`<div class="loading"><span class="spin"></span></div>`; return; }
+  const all=S.machines, T=bizTotals(all);
+  const deptsUsed = [...new Set([...S.depts, ...all.map(m=>m.dept).filter(Boolean)])]; if(all.some(m=>!m.dept)) deptsUsed.push("");
+  const byDept = deptsUsed.map((d,i)=>{ const ms=all.filter(m=>(m.dept||"")===d && m.status!=="sold"); return {d, n:ms.length, repl:ms.reduce((a,m)=>a+(+m.repl||0),0), paid:ms.reduce((a,m)=>a+(+m.paid||0),0), color:PALETTE[i%PALETTE.length]}; }).filter(x=>x.n>0).sort((a,b)=>b.repl-a.repl);
+  const maxR = Math.max(1,...byDept.map(x=>x.repl));
+  const gap = T.repl - T.paid;
+
+  let list = all.filter(m => S.ui.dept==="all" || (m.dept||"")===S.ui.dept);
+  const yr=S.ui.year; if(yr!=null) list=list.filter(m=> yr==="none" ? !/^\d{4}/.test(m.bought||"") : String(m.bought||"").startsWith(yr+"-"));
+  const q=S.ui.q.trim().toLowerCase();
+  if(q) list=list.filter(m=>[m.name,m.make,m.model,m.serial,m.supplier,m.tag,m.location,m.dept,m.yearModel].join(" ").toLowerCase().includes(q));
+  const sorters={value:(a,b)=>(+b.repl||0)-(+a.repl||0),resale:(a,b)=>(+b.resale||0)-(+a.resale||0),name:(a,b)=>(a.name||"").localeCompare(b.name||""),newest:(a,b)=>(b.bought||"").localeCompare(a.bought||""),oldest:(a,b)=>(a.bought||"9").localeCompare(b.bought||"9"),dept:(a,b)=>(a.dept||"").localeCompare(b.dept||"")||(a.name||"").localeCompare(b.name||"")};
+  list.sort(sorters[S.ui.sort]||sorters.value);
+
+  const alerts=[];
+  if(T.uninsN) alerts.push(`<button class="alert" data-act="filter-unins"><svg class="i"><use href="#i-warn"/></svg><span><u>${T.uninsN} machine${T.uninsN>1?"s":""} not marked insured</u> — ${money(T.uninsV,false)} replacement value at risk.</span></button>`);
+  if(T.staleN) alerts.push(`<div class="alert"><svg class="i"><use href="#i-warn"/></svg><span><u>${T.staleN} replacement cost${T.staleN>1?"s":""}</u> not reviewed in over a year. Prices move — update them before your insurance renewal.</span></div>`);
+
+  app.innerHTML = `
+  <div class="head"><div><div class="eyebrow"><svg class="i"><use href="#i-factory"/></svg>Business · shared</div><h1>Machine register</h1></div></div>
+  <section class="hero" aria-label="Business totals">
+    <div><div class="big-label"><span>Cost to replace everything today</span></div>
+    <div class="big">${bigMoney(T.repl)}</div></div>
+    <div class="stats four">
+      <div class="stat"><b>${money(T.paid,false)}</b><span>Paid in total</span></div>
+      <div class="stat"><b>${T.resaleN?money(T.resale,false):"—"}</b><span>Second-hand value${T.resaleN&&T.resaleN<T.count?` · ${T.resaleN} of ${T.count}`:""}</span></div>
+      <div class="stat ${gap>0?"neg":"pos"}"><b>${gap>0?"+":""}${money(gap,false)}</b><span>Replace vs paid</span></div>
+      <div class="stat"><b class="num">${T.count}</b><span>Active machines</span></div>
+    </div>
+    ${alerts.length?`<div class="alerts">${alerts.join("")}</div>`:""}
+  </section>
+  ${all.length?valueSection():""}
+  ${byDept.length?`
+  <div class="section-h"><h2>By department</h2>${S.canWrite?`<button data-act="depts">Edit</button>`:""}</div>
+  <div class="card brk">${byDept.map(x=>`
+    <button class="brk-row" data-dept="${esc(x.d)}" aria-pressed="${S.ui.dept===x.d}">
+      <span class="dot" style="background:${x.color}"></span><span class="nm">${esc(deptLabel(x.d))}</span><span class="amt">${money(x.repl,false)}</span>
+      <span class="meta"><span class="num">${x.n} machine${x.n>1?"s":""}</span><span class="bar"><i style="width:${(x.repl/maxR*100).toFixed(1)}%;background:${x.color}"></i></span><span>paid ${money(x.paid,false)}</span></span>
+    </button>`).join("")}</div>`:""}
+  ${all.length?`
+  <div class="tools">
+    <label class="search"><svg class="i"><use href="#i-search"/></svg><input id="q" type="search" placeholder="Search name, serial, supplier…" value="${esc(S.ui.q)}" autocomplete="off"></label>
+    <div class="chips" role="group" aria-label="Filter by department">
+      <button class="chip" data-dept="all" aria-pressed="${S.ui.dept==="all"}">All <span class="n">${all.length}</span></button>
+      ${deptsUsed.filter(d=>all.some(m=>(m.dept||"")===d)).map(d=>`<button class="chip" data-dept="${esc(d)}" aria-pressed="${S.ui.dept===d}">${esc(deptLabel(d))} <span class="n">${all.filter(m=>(m.dept||"")===d).length}</span></button>`).join("")}
+    </div>
+    ${S.ui.year!=null?`<div class="yearchip" id="yearchip"><span>${S.ui.year==="none"?"No purchase date":"Bought in "+S.ui.year} · ${list.length} machine${list.length===1?"":"s"} · paid ${money(list.reduce((a,m)=>a+(+m.paid||0),0),false)}</span><button data-act="clear-year" aria-label="Show all years"><svg class="i"><use href="#i-x"/></svg>All years</button></div>`:""}
+    <div class="sortrow"><span class="num">${list.length} shown</span><label>Sort: <select id="sort">
+      ${[["value","Highest replacement"],["resale","Highest second-hand"],["name","Name"],["dept","Department"],["newest","Newest purchase"],["oldest","Oldest purchase"]].map(([k,v])=>`<option value="${k}" ${S.ui.sort===k?"selected":""}>${v}</option>`).join("")}
+    </select></label></div>
+  </div>
+  ${list.length?`<div class="list-actions"><button data-act="print-shown"><svg class="i"><use href="#i-qr"/></svg>Stickers for these ${list.length}</button></div>`:""}
+  <div class="card list" id="mlist">${list.length? list.map(machineRow).join("") : `<div class="empty"><p>No machines match that search.</p></div>`}</div>
+  ` : `<div class="card empty"><div class="orb"><svg class="i"><use href="#i-camera"/></svg></div><h3>Register your first machine</h3><p>Add what you paid, where you bought it, what it would cost to replace today, and a photo or two.</p>${S.canWrite?`<button class="btn" data-act="new-machine"><svg class="i"><use href="#i-plus"/></svg>Add machine</button>`:""}</div>`}
+  <p class="note"><svg class="i"><use href="#i-factory"/></svg>Everyone you share this app with can see the business side.</p>`;
+  bindBiz();
+}
+function machineRow(m){
+  const cover = thumbSrc(m,0);
+  const st = m.status && m.status!=="use" ? `<span class="tag ${m.status}">${esc(STATUS[m.status]?.split(" ")[0]||m.status)}</span>` : "";
+  return `<button class="row mach" data-mid="${esc(m.id)}">
+    <span class="thumb">${cover?`<img src="${esc(cover)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`:`<svg class="i"><use href="#i-camera"/></svg>`}</span>
+    <span class="txt"><span class="t1">${esc(m.name||"Untitled machine")}</span>
+    <span class="t2">${[m.tag,m.dept,[m.make,m.model].filter(Boolean).join(" ")].filter(Boolean).map(esc).join(" · ")}</span>
+    <span class="t2">${m.bought?esc(niceDate(m.bought)):"Purchase date not set"}${m.boughtUsed?" · second-hand":""}${m.supplier?" · "+esc(m.supplier):""}</span></span>
+    <span class="rt"><b>${money(m.repl,false)}</b><small>paid ${money(m.paid,false)}</small>${st}</span>
+  </button>`;
+}
+function setYear(y){ S.ui.year = (S.ui.year===y) ? null : y; renderBiz(); if(S.ui.year!=null){ const l=$("#yearchip"); if(l) l.scrollIntoView({behavior:"smooth",block:"center"}); } }
+function bindBiz(){
+  drawValueChart();
+  const cy=document.querySelector('[data-act="clear-year"]'); if(cy) cy.onclick=()=>{ S.ui.year=null; renderBiz(); };
+  const ps=document.querySelector('[data-act="print-shown"]'); if(ps) ps.onclick=()=>{ const ids=[...document.querySelectorAll("#mlist [data-mid]")].map(b=>b.dataset.mid); stickerSheet(ids); };
+  document.querySelectorAll("[data-vt]").forEach(b=>b.onclick=()=>{ S.ui.vt=b.dataset.vt; store.set("al.vt",S.ui.vt); document.querySelectorAll("[data-vt]").forEach(x=>x.setAttribute("aria-pressed",x===b)); drawValueChart(); });
+  const q=$("#q"); if(q){ q.oninput=()=>{ S.ui.q=q.value; const pos=q.selectionStart; renderBiz(); const n=$("#q"); n.focus(); try{n.setSelectionRange(pos,pos)}catch{} }; }
+  const so=$("#sort"); if(so) so.onchange=()=>{ S.ui.sort=so.value; store.set("al.sort",so.value); renderBiz(); };
+  document.querySelectorAll("[data-dept]").forEach(b=>b.onclick=()=>{ const d=b.dataset.dept; S.ui.dept = (S.ui.dept===d && d!=="all")?"all":d; renderBiz(); });
+  document.querySelectorAll("[data-mid]").forEach(b=>b.onclick=()=>machineDetail(b.dataset.mid));
+  const nm=document.querySelector('[data-act="new-machine"]'); if(nm) nm.onclick=()=>machineForm(null);
+  const dp=document.querySelector('[data-act="depts"]'); if(dp) dp.onclick=()=>listEditor("dept");
+  const fu=document.querySelector('[data-act="filter-unins"]'); if(fu) fu.onclick=()=>{ S.ui.dept="all"; S.ui.q=""; uninsuredSheet(); };
+}
+function uninsuredSheet(){
+  const ms=S.machines.filter(m=>!m.insured && m.status!=="sold").sort((a,b)=>(+b.repl||0)-(+a.repl||0));
+  openSheet({title:"Not insured", left:"Close", body:`<div class="fg"><div class="foot" style="padding:0 4px 4px">Open a machine and switch on “Insured” once it is on your policy.</div><div class="card list">${ms.map(machineRow).join("")}</div></div>`,
+    onMount:(el)=>el.querySelectorAll("[data-mid]").forEach(b=>b.onclick=()=>{ closeSheet(); setTimeout(()=>machineDetail(b.dataset.mid),340); })});
+}
+
+function machineDetail(id){
+  const m=S.machines.find(x=>x.id===id); if(!m) return;
+  const ph=m.photos||[]; const gap=(+m.repl||0)-(+m.paid||0);
+  const kv=(k,v)=> v?`<div class="kv"><span>${k}</span><b>${v}</b></div>`:"";
+  const stale = (+m.repl||0)>0 && monthsSince(m.replUpdated||m.created)>12;
+  openSheet({title:esc(m.tag||"Machine"), left:"Close", right:S.canWrite?"Edit":null, onRight:()=>{ closeSheet(); setTimeout(()=>machineForm(m),340); },
+    onMount:(el)=>{
+      const q1=el.querySelector("[data-qr-one]"); if(q1) q1.onclick=()=>downloadStickers([m],1,`sticker-${(m.tag||m.name||"machine").toLowerCase().replace(/[^a-z0-9]+/g,"-")}.html`);
+      el.querySelectorAll(".gi").forEach(b=>{ b.onclick=()=>openViewer(m,+b.dataset.i);
+        const img=b.querySelector("img"), full=img.dataset.full; if(full && img.src.indexOf(full)<0){ const pre=new Image(); pre.decoding="async"; pre.onload=()=>{ img.src=full; }; pre.src=full; } });
+    },
+    body:`
+    ${ph.length?`<div class="gallery ${ph.length>1?"multi":""}">${ph.map((p,i)=>`<button class="gi" data-i="${i}" aria-label="View photo ${i+1} of ${ph.length}"><img src="${esc(thumbSrc(m,i))}" data-full="${photoUrl(p)}" alt="${esc(m.name)}" decoding="async"><span class="ct"><svg class="i"><use href="#i-expand"/></svg>${ph.length>1?`${i+1}/${ph.length}`:"View"}</span></button>`).join("")}</div>`:""}
+    <div class="d-title"><h2>${esc(m.name||"Untitled machine")}</h2><p>${[m.dept,[m.make,m.model].filter(Boolean).join(" "),STATUS[m.status||"use"]].filter(Boolean).map(esc).join(" · ")}</p></div>
+    <div class="vals">
+      <div class="val"><span>Replacement cost</span><b>${money(m.repl,false)}</b><small>${m.replUpdated?"checked "+esc(niceDate(m.replUpdated)):""}</small></div>
+      <div class="val"><span>Paid</span><b>${money(m.paid,false)}</b><small>${gap>0?"replace costs "+money(gap,false)+" more":gap<0?"replace is "+money(-gap,false)+" cheaper":"same as paid"}</small></div>
+      <div class="val ${+m.resale>0?"":"empty"}"><span>Second-hand</span><b>${+m.resale>0?money(m.resale,false):"Not set"}</b><small>${+m.resale>0?(+m.paid>0?`${Math.round(m.resale/m.paid*100)}% of what we paid`:"if we sold it")+(m.resaleUpdated?` · ${esc(niceDate(m.resaleUpdated))}`:""):"what it would sell for"}</small></div>
+    </div>
+    ${stale?`<div class="alert"><svg class="i"><use href="#i-warn"/></svg><span>Replacement cost was last checked over a year ago.</span></div>`:""}
+    <div class="fg"><div class="cap">Purchase</div><div class="inset">
+      ${kv("Bought", m.bought?esc(niceDate(m.bought))+` <span style="color:var(--fg-3)">· ${esc(ageOf(m.bought))}</span>`:"")}
+      <div class="kv"><span>Bought as</span><b>${m.boughtUsed?"Second-hand":"New"}</b></div>
+      ${kv("Supplier", esc(m.supplier))}${kv("Supplier location", esc(m.supplierLoc))}${kv("Invoice no.", esc(m.invoice))}
+      ${kv("Warranty until", m.warranty?esc(niceDate(m.warranty)):"")}
+      ${!m.bought&&!m.supplier?`<div class="kv"><span>No purchase details yet</span><b></b></div>`:""}
+    </div></div>
+    <div class="fg"><div class="cap">Identification</div><div class="inset">
+      ${kv("Asset tag",esc(m.tag))}${kv("Serial number",esc(m.serial))}${kv("Year model",esc(m.yearModel))}${kv("Location",esc(m.location))}
+      <div class="kv"><span>Insured</span><b style="color:${m.insured?"var(--good)":"var(--warn)"}">${m.insured?"Yes":"No"}</b></div>
+    </div></div>
+    ${m.notes?`<div class="fg"><div class="cap">Notes</div><div class="inset notes">${esc(m.notes)}</div></div>`:""}
+    <div class="fg"><div class="cap">QR sticker</div><div class="inset qr-row">${qrSvg(machineLink(m))}<div><b>Scan to open this machine</b><p>Print a sticker and put it on the machine.</p><button class="btn ghost" data-qr-one><svg class="i"><use href="#i-qr"/></svg>Download sticker</button></div></div></div>
+    `});
+}
+
+function nextTag(){
+  let max=0; for(const m of S.machines){ const n=parseInt(String(m.tag||"").replace(/\D/g,""),10); if(n>max) max=n; }
+  return "M-"+String(max+1).padStart(3,"0");
+}
+function machineForm(m){
+  const isNew=!m; const f = m? {...m, photos:[...(m.photos||[])]} : {tag:nextTag(),dept:S.ui.dept!=="all"?S.ui.dept:S.depts[0],status:"use",insured:false,photos:[],bought:""};
+  // photo items: {id, thumb, local, pending, failed, removed, promise}
+  const items=(f.photos||[]).map((id,i)=>({id,thumb:(f.thumbs||[])[i]||""}));
+  const removed=[]; let cancelled=false;
+  const deptOpts = [...new Set([...S.depts, f.dept].filter(Boolean))];
+  const body = `
+    <div class="fg"><div class="cap">Photos</div><div class="inset"><div class="photos" id="phs"></div></div>
+      <div class="foot">${S.assets?"First photo is the cover. You can save straight away; photos finish uploading in the background.":"Only people who can edit this app can add photos."}</div></div>
+    <div class="fg"><div class="cap">Machine</div><div class="inset">
+      <label class="f full"><input id="m-name" placeholder="Name, e.g. CNC plasma table" value="${esc(f.name)}" autocomplete="off"></label>
+      <label class="f"><span>Department</span><select id="m-dept">${deptOpts.map(d=>`<option ${d===f.dept?"selected":""}>${esc(d)}</option>`).join("")}<option value="" ${!f.dept?"selected":""}>No department</option><option value="__new">New department…</option></select></label>
+      <label class="f"><span>Make</span><input id="m-make" value="${esc(f.make)}" placeholder="Brand"></label>
+      <label class="f"><span>Model</span><input id="m-model" value="${esc(f.model)}" placeholder="Model"></label>
+      <label class="f"><span>Year model</span><input id="m-year" inputmode="numeric" value="${esc(f.yearModel)}" placeholder="e.g. 2015"></label>
+      <label class="f"><span>Status</span><select id="m-status">${Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${k===(f.status||"use")?"selected":""}>${v}</option>`).join("")}</select></label>
+    </div><div class="err" id="m-err" hidden></div></div>
+    <div class="fg"><div class="cap">Value</div><div class="inset">
+      <label class="f money"><span>Paid</span><span class="pre">R</span><input id="m-paid" inputmode="decimal" placeholder="0.00" value="${esc(amtInput(f.paid))}"></label>
+      <label class="f money"><span>Cost to replace</span><span class="pre">R</span><input id="m-repl" inputmode="decimal" placeholder="0.00" value="${esc(amtInput(f.repl))}"></label>
+      <label class="f money"><span>Second-hand value</span><span class="pre">R</span><input id="m-resale" inputmode="decimal" placeholder="If we sold it" value="${esc(amtInput(f.resale))}"></label>
+      <div class="f"><span>Insured</span><label class="toggle"><input type="checkbox" id="m-ins" ${f.insured?"checked":""} aria-label="Insured"><i></i></label></div>
+    </div><div class="foot">Replacement cost = what a new equivalent machine costs today, delivered and installed. Second-hand value = what a buyer would realistically pay for this one as it stands.</div></div>
+    <div class="fg"><div class="cap">Purchase</div><div class="inset">
+      <label class="f"><span>Date bought</span><input id="m-bought" type="date" value="${esc(f.bought)}" max="${today()}"></label>
+      <div class="f"><span>Bought second-hand</span><label class="toggle"><input type="checkbox" id="m-used" ${f.boughtUsed?"checked":""} aria-label="Bought second-hand"><i></i></label></div>
+      <label class="f"><span>Supplier</span><input id="m-sup" value="${esc(f.supplier)}" placeholder="Who sold it"></label>
+      <label class="f"><span>Where</span><input id="m-supl" value="${esc(f.supplierLoc)}" placeholder="Town or contact"></label>
+      <label class="f"><span>Invoice no.</span><input id="m-inv" value="${esc(f.invoice)}" placeholder="Optional"></label>
+      <label class="f"><span>Warranty until</span><input id="m-war" type="date" value="${esc(f.warranty)}"></label>
+    </div></div>
+    <div class="fg"><div class="cap">Identification</div><div class="inset">
+      <label class="f"><span>Asset tag</span><input id="m-tag" value="${esc(f.tag)}"></label>
+      <label class="f"><span>Serial number</span><input id="m-ser" value="${esc(f.serial)}" placeholder="From the nameplate"></label>
+      <label class="f"><span>Location</span><input id="m-loc" value="${esc(f.location)}" placeholder="Bay, building…"></label>
+    </div></div>
+    <div class="fg"><div class="cap">Notes</div><div class="inset"><label class="f full"><textarea id="m-notes" placeholder="Service history, quirks, spare parts…">${esc(f.notes)}</textarea></label></div></div>
+    ${!isNew?`<button class="btn danger" id="m-del"><svg class="i"><use href="#i-x"/></svg>Delete machine</button>`:""}`;
+
+  openSheet({title:isNew?"New machine":"Edit machine", left:"Cancel", right:"Save",
+    onLeft: async ()=>{ cancelled=true; for(const it of items) if(it.fresh && it.id) S.assets.delete(it.id).catch(()=>{}); },
+    onRight: save, body, onMount:(el)=>{
+      drawPhotos();
+      el.querySelector("#m-dept").onchange=e=>{ if(e.target.value==="__new"){ const s=e.target; askText("New department","Department name","",name=>{ if(!name){ s.value=f.dept||S.depts[0]; return;} if(!S.depts.includes(name)){ S.depts.push(name); saveDepts(); } const o=document.createElement("option"); o.textContent=name; s.insertBefore(o,s.lastElementChild); s.value=name; }); } };
+      el.querySelectorAll(".money input").forEach(i=>{ i.onblur=()=>{ const n=parseAmount(i.value); i.value = isNaN(n)?"":amtInput(n); }; });
+      const del=el.querySelector("#m-del"); if(del) del.onclick=()=>confirmSheet(`Delete “${m.name||"this machine"}”? Its photos are removed too. This can’t be undone.`,"Delete machine",async()=>{
+        try{ await S.db.doc("machines/"+m.id).delete(); for(const p of (m.photos||[])) try{ await S.assets?.delete(p);}catch{} closeSheet(true); toast("Machine deleted"); }catch(e){ toast("Couldn’t delete. Check your connection and try again."); } });
+    }});
+
+  function drawPhotos(){
+    const box=$("#phs"); if(!box) return;
+    const c0=items[0]; const heroSrc=c0 ? (c0.local||(c0.id?photoUrl(c0.id):c0.thumb)) : "";
+    box.innerHTML = (heroSrc?`<div class="ph-hero"><img src="${esc(heroSrc)}" alt="Cover photo"${c0.thumb&&!c0.local?` style="background:center/contain no-repeat url('${esc(c0.thumb)}')"`:""}></div>`:"") + items.map((it,i)=>{ const src=it.local||it.thumb||(it.id?photoUrl(it.id):""); return `<div class="ph ${it.pending?"busy":""}">${src?`<img src="${esc(src)}" alt="">`:""}${it.pending?`<span class="spin"></span>`:""}${i===0?`<span class="cov">Cover</span>`:""}<button class="x" data-rm="${i}" aria-label="Remove photo"><svg class="i"><use href="#i-x"/></svg></button></div>`; }).join("")
+      + (S.assets && items.length<9 ? `<div class="ph add"><label><svg class="i"><use href="#i-camera"/></svg>Add photo<input type="file" accept="image/*" multiple id="ph-in"></label></div>`:"");
+    box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{ const [it]=items.splice(+b.dataset.rm,1); it.removed=true;
+      if(it.fresh && it.id) S.assets.delete(it.id).catch(()=>{}); else if(it.id) removed.push(it.id); drawPhotos(); });
+    const inp=box.querySelector("#ph-in"); if(inp) inp.onchange=()=>{
+      const files=[...inp.files].slice(0, 9-items.length); inp.value="";
+      for(const file of files){
+        const it={pending:true}; items.push(it);
+        it.promise=(async()=>{
+          PENDING.n++;
+          try{
+            const {full,thumb}=await prepPhoto(file);
+            it.thumb=thumb; it.local=URL.createObjectURL(full); drawPhotos();
+            const r=await S.assets.upload(full,{type:"image/jpeg"}); it.id=r.id; it.fresh=true;
+            if(it.removed||cancelled){ S.assets.delete(r.id).catch(()=>{}); }
+          }catch(e){ it.failed=true; if(!it.removed&&!cancelled) toast(e&&e.code==="too_large"?"That photo is too large.":e&&e.code==="quota_or_state"?"Photo storage is full.":"A photo couldn’t be added. Try again."); const k=items.indexOf(it); if(k>-1) items.splice(k,1); }
+          it.pending=false; PENDING.n--; drawPhotos();
+        })();
+      }
+      drawPhotos();
+    };
+  }
+  async function save(){
+    const g=id=>document.getElementById(id).value.trim();
+    const name=g("m-name"); const err=$("#m-err");
+    if(!name){ err.textContent="Give the machine a name."; err.hidden=false; document.getElementById("m-name").focus(); return false; }
+    const paid=parseAmount(g("m-paid")), repl=parseAmount(g("m-repl")), resale=parseAmount(g("m-resale"));
+    const doc={ name, dept:g("m-dept")==="__new"?(f.dept||""):g("m-dept"), make:g("m-make"), model:g("m-model"), yearModel:g("m-year"), status:g("m-status"),
+      paid:isNaN(paid)?0:paid, repl:isNaN(repl)?0:repl, resale:isNaN(resale)?0:resale,
+      resaleUpdated: isNaN(resale)||!resale ? "" : ((isNew || resale!==(+m.resale||0)) ? today() : (f.resaleUpdated||today())), insured:document.getElementById("m-ins").checked, boughtUsed:document.getElementById("m-used").checked,
+      bought:g("m-bought"), supplier:g("m-sup"), supplierLoc:g("m-supl"), invoice:g("m-inv"), warranty:g("m-war"),
+      tag:g("m-tag"), serial:g("m-ser"), location:g("m-loc"), notes:document.getElementById("m-notes").value.trim(),
+      photos:[], thumbs:[], updated:new Date().toISOString(), created:f.created||new Date().toISOString(),
+      replUpdated: (isNew || (+repl||0)!==(+m.repl||0)) ? today() : (f.replUpdated||"") };
+    if(S.uid) doc.updatedBy=S.uid;
+    const done=()=>items.filter(it=>it.id && !it.failed && !it.removed);
+    const d0=done(); doc.photos=d0.map(it=>it.id); doc.thumbs=d0.map(it=>it.thumb||"");
+    const docId=isNew?uid():m.id;
+    try{
+      await S.db.doc("machines/"+docId).set(doc);
+      for(const p of removed) S.assets?.delete(p).catch(()=>{});
+    }catch(e){ toast(e&&e.code==="quota_exceeded"?"Storage is full. Delete old records first.":"Couldn’t save. You may only have view access."); return false; }
+    const pend=items.filter(it=>it.pending);
+    closeSheet(true);
+    if(!pend.length){ toast(isNew?"Machine added":"Saved"); return; }
+    toast(`Saved · ${pend.length} photo${pend.length>1?"s":""} still uploading`);
+    await Promise.all(pend.map(it=>it.promise));
+    const fin=done();
+    try{ await S.db.doc("machines/"+docId).update({photos:fin.map(it=>it.id),thumbs:fin.map(it=>it.thumb||"")}); toast("Photos uploaded"); }
+    catch{ toast("Photos couldn’t be attached. Open the machine and add them again."); }
+  }
+}
+const PENDING={n:0};
+window.addEventListener("beforeunload",e=>{ if(PENDING.n>0){ e.preventDefault(); e.returnValue=""; } });
+const deptLabel = d => d || "No department";
+function thumbSrc(m,i){ const t=(m.thumbs||[])[i]; if(t) return t; const p=(m.photos||[])[i]; return p?photoUrl(p):""; }
+async function loadImg(file){
+  try{ return await createImageBitmap(file,{imageOrientation:"from-image"}); }
+  catch{ try{ return await createImageBitmap(file); }catch{} }
+  return await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(file); });
+}
+function drawTo(src,max,q){
+  const w=src.width||src.naturalWidth, h=src.height||src.naturalHeight; const k=Math.min(1,max/Math.max(w,h));
+  const c=document.createElement("canvas"); c.width=Math.max(1,Math.round(w*k)); c.height=Math.max(1,Math.round(h*k));
+  const x=c.getContext("2d"); x.imageSmoothingQuality="high"; x.drawImage(src,0,0,c.width,c.height); return c;
+}
+// One decode → a 1280px upload copy (~150–250 KB) plus a tiny inline preview stored with the record, so lists open instantly.
+async function prepPhoto(file){
+  const src=await loadImg(file);
+  const big=drawTo(src,1280,.8);
+  const full=await new Promise((r,j)=>big.toBlob(b=>b?r(b):j(new Error("encode")),"image/jpeg",.8));
+  const thumb=drawTo(big,200,.62).toDataURL("image/jpeg",.62);
+  if(src.close) try{src.close()}catch{}
+  return {full,thumb};
+}
+let viewerClose=null;
+function openViewer(m,start){
+  const ph=m.photos||[]; if(!ph.length) return;
+  const v=document.createElement("div"); v.className="viewer"; v.setAttribute("role","dialog"); v.setAttribute("aria-modal","true"); v.setAttribute("aria-label","Photos of "+(m.name||"machine"));
+  v.innerHTML=`<div class="vw-top"><button class="vw-b" data-x aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button><span class="vw-t">${esc(m.name||"")}</span><span class="vw-n"></span></div>
+    <div class="vw-track">${ph.map((p,i)=>`<div class="vw-slide"><img src="${esc(thumbSrc(m,i))}" data-full="${photoUrl(p)}" alt="Photo ${i+1} of ${esc(m.name||"machine")}" decoding="async"></div>`).join("")}</div>
+    <button class="vw-b vw-nav p" aria-label="Previous photo"><svg class="i"><use href="#i-chev"/></svg></button><button class="vw-b vw-nav n" aria-label="Next photo"><svg class="i"><use href="#i-chev"/></svg></button>
+    <div class="vw-bot"><a class="vw-open" target="_blank" rel="noopener">Open full size</a></div>`;
+  document.body.appendChild(v);
+  const track=v.querySelector(".vw-track"), n=v.querySelector(".vw-n"), open=v.querySelector(".vw-open"), P=v.querySelector(".vw-nav.p"), N=v.querySelector(".vw-nav.n");
+  let idx=start;
+  const load=i=>{ const img=track.children[i]?.querySelector("img"); if(img && img.dataset.full && !img.dataset.done){ img.dataset.done=1; const pre=new Image(); pre.onload=()=>img.src=img.dataset.full; pre.src=img.dataset.full; } };
+  const sync=()=>{ idx=Math.round(track.scrollLeft/Math.max(1,track.clientWidth)); n.textContent=ph.length>1?`${idx+1} of ${ph.length}`:""; open.href=photoUrl(ph[idx]); P.hidden=idx<=0; N.hidden=idx>=ph.length-1; load(idx); load(idx+1); load(idx-1); };
+  const go=i=>track.scrollTo({left:i*track.clientWidth,behavior:"smooth"});
+  requestAnimationFrame(()=>{ track.scrollLeft=start*track.clientWidth; sync(); v.classList.add("on"); });
+  let t; track.addEventListener("scroll",()=>{ clearTimeout(t); t=setTimeout(sync,60); });
+  P.onclick=()=>go(idx-1); N.onclick=()=>go(idx+1);
+  const close=()=>{ viewerClose=null; v.classList.remove("on"); setTimeout(()=>v.remove(),230); };
+  v.querySelector("[data-x]").onclick=close;
+  track.addEventListener("click",e=>{ if(e.target.classList.contains("vw-slide")) close(); });
+  viewerClose={close,go:d=>go(Math.min(ph.length-1,Math.max(0,idx+d)))};
+  setTimeout(()=>v.querySelector("[data-x]").focus(),50);
+}
+async function saveDepts(){ try{ await S.db.doc("meta/business").set({depts:S.depts}); }catch{ toast("Couldn’t save departments"); } }
+
+/* ===== PERSONAL ===== */
+function periodFilter(e){
+  const y=new Date().getFullYear(); const p=S.ui.period;
+  if(p==="all") return true; const ey=+String(e.date||"").slice(0,4);
+  if(p==="year") return ey===y; if(p==="last") return ey===y-1; return ey===+p;
+}
+function renderMe(){
+  const app=$("#app");
+  if(!S.canMe){ $("#fab").hidden=true; app.innerHTML=`
+    <div class="head"><div><div class="eyebrow"><svg class="i"><use href="#i-lock"/></svg>Personal · private</div><h1>My spending</h1></div></div>
+    <div class="card empty"><div class="orb"><svg class="i"><use href="#i-lock"/></svg></div><h3>Personal side isn’t available</h3><p>Your private ledger needs you signed in with at least contributor access to this app. Ask the owner to change your access in the Share menu.</p></div>`; return; }
+  $("#fab").hidden=!S.ready.me;
+  if(!S.ready.me){ app.innerHTML=`<div class="loading"><span class="spin"></span></div>`; return; }
+  const G=S.groups, gmap=Object.fromEntries(G.map(g=>[g.id,g]));
+  const inPeriod=S.entries.filter(periodFilter);
+  const total=inPeriod.reduce((a,e)=>a+(+e.amount||0),0);
+  const byG=G.map(g=>({g, sum:inPeriod.filter(e=>e.group===g.id).reduce((a,e)=>a+(+e.amount||0),0), n:inPeriod.filter(e=>e.group===g.id).length, all:S.entries.filter(e=>e.group===g.id).reduce((a,e)=>a+(+e.amount||0),0)}));
+  const orphan = inPeriod.filter(e=>!gmap[e.group]); if(orphan.length) byG.push({g:{id:"__none",name:"No group",color:"#8d909b"},sum:orphan.reduce((a,e)=>a+(+e.amount||0),0),n:orphan.length,all:0});
+  const maxG=Math.max(1,...byG.map(x=>x.sum));
+  const valued = G.filter(g=>g.value!=null && g.value!=="" && !isNaN(+g.value));
+  const valueTotal = valued.reduce((a,g)=>a+(+g.value||0),0);
+  const years=[...new Set(S.entries.map(e=>+String(e.date||"").slice(0,4)).filter(Boolean))].sort((a,b)=>b-a);
+  const y=new Date().getFullYear();
+  const periods=[["year",String(y)],["last",String(y-1)],["all","All time"],...years.filter(v=>v<y-1).map(v=>[String(v),String(v)])];
+  const pLabel = (periods.find(p=>p[0]===S.ui.period)||periods[0])[1];
+
+  // 12-month bars ending this month
+  const now=new Date(); const mb=[];
+  for(let i=11;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+    mb.push({l:MONTHS[d.getMonth()][0],full:MONTHS[d.getMonth()]+" "+d.getFullYear(),v:S.entries.filter(e=>String(e.date||"").startsWith(key)).reduce((a,e)=>a+(+e.amount||0),0)}); }
+  const mmax=Math.max(1,...mb.map(x=>x.v));
+
+  let list=inPeriod.filter(e=>S.ui.group==="all"||e.group===S.ui.group||(S.ui.group==="__none"&&!gmap[e.group]));
+  const q=S.ui.meQ.trim().toLowerCase(); if(q) list=list.filter(e=>[e.title,e.vendor,e.note,gmap[e.group]?.name].join(" ").toLowerCase().includes(q));
+  list.sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.created||"").localeCompare(a.created||""));
+  const months={}; for(const e of list){ const k=String(e.date||"").slice(0,7)||"none"; (months[k]=months[k]||[]).push(e); }
+
+  app.innerHTML = `
+  <div class="head"><div><div class="eyebrow"><svg class="i"><use href="#i-lock"/></svg>Personal · only you</div><h1>My spending</h1></div></div>
+  <section class="hero" aria-label="Personal totals">
+    <div><div class="big-label"><span>Spent · ${esc(pLabel)}</span></div><div class="big">${bigMoney(total)}</div></div>
+    <div class="stats">
+      <div class="stat"><b class="num">${inPeriod.length}</b><span>Purchases</span></div>
+      <div class="stat"><b>${money(S.entries.reduce((a,e)=>a+(+e.amount||0),0),false)}</b><span>All-time total</span></div>
+      <div class="stat"><b>${valued.length?money(valueTotal,false):"—"}</b><span>Est. value now</span></div>
+    </div>
+    ${S.entries.length?`<div class="months" aria-label="Spending over the last 12 months">${mb.map(x=>`<div class="m ${x.v?"":"zero"}" title="${x.full}"><i style="height:${Math.max(3,x.v/mmax*70)}px"></i><span>${x.l}</span></div>`).join("")}</div>`:""}
+  </section>
+  <div class="chips" role="group" aria-label="Period">${periods.map(([k,v])=>`<button class="chip" data-period="${k}" aria-pressed="${S.ui.period===k}">${v}</button>`).join("")}</div>
+  <div class="section-h"><h2>Groups</h2><button data-act="groups">Edit</button></div>
+  <div class="card brk">${byG.map(x=>{ const v=x.g.value; const hasV=v!=null&&v!==""&&!isNaN(+v); return `
+    <button class="brk-row" data-group="${esc(x.g.id)}" aria-pressed="${S.ui.group===x.g.id}">
+      <span class="dot" style="background:${esc(x.g.color)}"></span><span class="nm">${esc(x.g.name)}</span><span class="amt">${money(x.sum,false)}</span>
+      <span class="meta"><span class="num">${x.n} item${x.n===1?"":"s"}</span><span class="bar"><i style="width:${(x.sum/maxG*100).toFixed(1)}%;background:${esc(x.g.color)}"></i></span>${hasV?`<span>worth ${money(v,false)}</span>`:""}</span>
+    </button>`;}).join("")}</div>
+  ${S.entries.length?`
+  <div class="tools"><label class="search"><svg class="i"><use href="#i-search"/></svg><input id="mq" type="search" placeholder="Search purchases…" value="${esc(S.ui.meQ)}" autocomplete="off"></label>
+  ${S.ui.group!=="all"?`<div class="sortrow"><span>Showing ${esc((gmap[S.ui.group]||{name:"No group"}).name)}</span><button style="color:var(--accent);font-weight:600" data-group="all">Show all</button></div>`:""}</div>
+  <div class="list">${Object.keys(months).length? Object.entries(months).map(([k,es])=>`
+    <div class="month-h"><span>${k==="none"?"No date":esc(niceDate(k))}</span><span>${money(es.reduce((a,e)=>a+(+e.amount||0),0),false)}</span></div>
+    <div class="card">${es.map(e=>entryRow(e,gmap)).join("")}</div>`).join("") : `<div class="card empty"><p>Nothing here for ${esc(pLabel)}${q?" with that search":""}.</p></div>`}</div>`
+  : `<div class="card empty"><div class="orb"><svg class="i"><use href="#i-receipt"/></svg></div><h3>Log your first big purchase</h3><p>New roof, boat engine, tyres, a tank of diesel. Each one adds to its group and to your grand total.</p><button class="btn" data-act="new-entry"><svg class="i"><use href="#i-plus"/></svg>Add purchase</button></div>`}
+  <p class="note"><svg class="i"><use href="#i-lock"/></svg>Private to your account. Nobody else who opens this app can see it.</p>`;
+  bindMe();
+}
+function entryRow(e,gmap){
+  const g=gmap[e.group]||{name:"No group",color:"#8d909b"};
+  return `<button class="row" data-eid="${esc(e.id)}">
+    <span class="badge" style="background:color-mix(in srgb,${esc(g.color)} 18%,transparent);color:${esc(g.color)}">${esc(initials(g.name))}</span>
+    <span class="txt"><span class="t1">${esc(e.title||g.name)}</span><span class="t2">${[g.name,e.vendor].filter(Boolean).map(esc).join(" · ")}</span></span>
+    <span class="rt"><b>${money(e.amount)}</b><small>${esc(niceDate(e.date))}</small></span></button>`;
+}
+function bindMe(){
+  document.querySelectorAll("[data-period]").forEach(b=>b.onclick=()=>{ S.ui.period=b.dataset.period; store.set("al.period",S.ui.period); renderMe(); });
+  document.querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>{ const g=b.dataset.group; S.ui.group=(S.ui.group===g&&g!=="all")?"all":g; renderMe(); });
+  document.querySelectorAll("[data-eid]").forEach(b=>b.onclick=()=>entryForm(S.entries.find(e=>e.id===b.dataset.eid)));
+  const ne=document.querySelector('[data-act="new-entry"]'); if(ne) ne.onclick=()=>entryForm(null);
+  const gr=document.querySelector('[data-act="groups"]'); if(gr) gr.onclick=()=>listEditor("group");
+  const q=$("#mq"); if(q) q.oninput=()=>{ S.ui.meQ=q.value; const pos=q.selectionStart; renderMe(); const n=$("#mq"); n.focus(); try{n.setSelectionRange(pos,pos)}catch{} };
+}
+function entryForm(e){
+  const isNew=!e; const f=e?{...e}:{date:today(),group:S.ui.group!=="all"&&S.ui.group!=="__none"?S.ui.group:S.groups[0]?.id};
+  openSheet({title:isNew?"New purchase":"Edit purchase", left:"Cancel", right:"Save", onRight:save, body:`
+    <div class="fg"><div class="inset">
+      <label class="f money" style="min-height:64px"><span>Amount</span><span class="pre">R</span><input id="e-amt" inputmode="decimal" placeholder="0.00" value="${esc(amtInput(f.amount))}" style="font-size:22px"></label>
+    </div><div class="err" id="e-err" hidden></div></div>
+    <div class="fg"><div class="inset">
+      <label class="f full"><input id="e-title" placeholder="What was it? e.g. New gate motor" value="${esc(f.title)}" autocomplete="off"></label>
+      <label class="f"><span>Group</span><select id="e-group">${S.groups.map(g=>`<option value="${esc(g.id)}" ${g.id===f.group?"selected":""}>${esc(g.name)}</option>`).join("")}</select></label>
+      <label class="f"><span>Date</span><input id="e-date" type="date" value="${esc(f.date)}"></label>
+      <label class="f"><span>Where</span><input id="e-vendor" value="${esc(f.vendor)}" placeholder="Shop or contractor"></label>
+    </div></div>
+    <div class="fg"><div class="cap">Notes</div><div class="inset"><label class="f full"><textarea id="e-note" placeholder="Warranty, invoice number, odometer…">${esc(f.note)}</textarea></label></div></div>
+    ${!isNew?`<button class="btn danger" id="e-del"><svg class="i"><use href="#i-x"/></svg>Delete purchase</button>`:""}`,
+    onMount:(el)=>{
+      const a=el.querySelector("#e-amt"); a.onblur=()=>{ const n=parseAmount(a.value); a.value=isNaN(n)?"":amtInput(n); }; if(isNew) setTimeout(()=>a.focus(),380);
+      const d=el.querySelector("#e-del"); if(d) d.onclick=()=>confirmSheet("Delete this purchase? It comes off your totals.","Delete purchase",async()=>{ try{ await entriesCol().doc(e.id).delete(); closeSheet(true); toast("Deleted"); }catch{ toast("Couldn’t delete. Try again."); } });
+    }});
+  async function save(){
+    const amt=parseAmount($("#e-amt").value); const err=$("#e-err");
+    if(isNaN(amt)||amt<=0){ err.textContent="Enter the amount you paid."; err.hidden=false; $("#e-amt").focus(); return false; }
+    const doc={amount:amt,title:$("#e-title").value.trim(),group:$("#e-group").value,date:$("#e-date").value||today(),vendor:$("#e-vendor").value.trim(),note:$("#e-note").value.trim(),created:f.created||new Date().toISOString(),updated:new Date().toISOString()};
+    try{ await entriesCol().doc(isNew?uid():e.id).set(doc); closeSheet(true); toast(isNew?"Purchase added":"Saved"); }
+    catch(x){ toast(x&&x.code==="quota_exceeded"?"Storage is full.":"Couldn’t save. Check your access and try again."); return false; }
+  }
+}
+async function saveGroups(){ try{ await S.db.doc("personal_settings/"+S.uid).set({groups:S.groups}); }catch{ toast("Couldn’t save groups"); } }
+
+/* ---------- group / department editor ---------- */
+function listEditor(kind){
+  const isG=kind==="group";
+  const draw=()=>{
+    const items = isG ? S.groups : S.depts.map(d=>({id:d,name:d}));
+    return `<div class="fg"><div class="foot" style="padding:0 4px">${isG?"Groups organise your purchases. Add an estimated value to track what a boat or vehicle is worth now.":"Departments group the machine register and totals."}</div></div>
+    <div class="card list">${items.map((it,i)=>{ const used = isG? S.entries.filter(e=>e.group===it.id).length : S.machines.filter(m=>m.dept===it.name).length; return `
+      <button class="row" data-edit="${i}">${isG?`<span class="badge" style="background:color-mix(in srgb,${esc(it.color)} 18%,transparent);color:${esc(it.color)}">${esc(initials(it.name))}</span>`:""}
+      <span class="txt"><span class="t1">${esc(it.name)}</span><span class="t2">${used} ${isG?"purchase":"machine"}${used===1?"":"s"}${isG&&it.value?` · worth ${money(it.value,false)}`:""}</span></span>
+      <svg class="i" style="color:var(--fg-3)"><use href="#i-chev"/></svg></button>`;}).join("")}</div>
+    <button class="btn ghost" id="le-add"><svg class="i"><use href="#i-plus"/></svg>Add ${isG?"group":"department"}</button>`;
+  };
+  const mount=(el)=>{
+    el.querySelector("#le-add").onclick=()=> isG ? groupForm(null,refresh) : askText("New department","Department name","",n=>{ if(n&&!S.depts.includes(n)){ S.depts.push(n); saveDepts(); refresh(); } });
+    el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{ const i=+b.dataset.edit;
+      if(isG) groupForm(S.groups[i],refresh); else deptMenu(i,refresh); });
+  };
+  const refresh=()=>{ const b=document.querySelector(".sheet .sheet-b"); if(b){ b.innerHTML=draw(); mount(b);} render(); };
+  openSheet({title:isG?"Groups":"Departments", left:"Done", body:draw(), onMount:mount});
+}
+function deptMenu(i,refresh){
+  const name=S.depts[i]; const used=S.machines.filter(m=>m.dept===name).length;
+  actionSheet(name,[
+    {label:"Rename", run:()=>askText("Rename department","Department name",name,async n=>{ if(!n||n===name) return; S.depts[i]=n; await saveDepts();
+      for(const m of S.machines.filter(m=>m.dept===name)){ try{ await S.db.doc("machines/"+m.id).update({dept:n}); }catch{} } refresh(); toast("Renamed"); })},
+    used? {label:`Can’t delete · ${used} machine${used>1?"s":""} use it`, disabled:true} :
+    {label:"Delete", danger:true, run:async()=>{ S.depts.splice(i,1); await saveDepts(); refresh(); }}
+  ]);
+}
+function groupForm(g,refresh){
+  const isNew=!g; const f=g?{...g}:{id:"g-"+uid(),name:"",color:PALETTE[S.groups.length%PALETTE.length]};
+  const used=g?S.entries.filter(e=>e.group===g.id).length:0;
+  const html=`<div class="scrim" id="gs-scrim" style="z-index:55"></div>
+  <div class="sheet" id="gs" role="dialog" aria-modal="true" aria-label="${isNew?"New group":"Edit group"}" style="z-index:56">
+    <div class="sheet-h"><button class="l" id="gs-c">Cancel</button><h3>${isNew?"New group":"Edit group"}</h3><button class="r" id="gs-s">Save</button></div>
+    <div class="sheet-b">
+      <div class="fg"><div class="inset"><label class="f full"><input id="g-name" placeholder="Group name, e.g. Farm equipment" value="${esc(f.name)}"></label></div><div class="err" id="g-err" hidden></div></div>
+      <div class="fg"><div class="cap">Colour</div><div class="inset"><div class="swatches">${PALETTE.map(c=>`<button class="sw" style="background:${c}" data-c="${c}" aria-label="Colour" aria-pressed="${c===f.color}"></button>`).join("")}</div></div></div>
+      <div class="fg"><div class="cap">Estimated value now</div><div class="inset"><label class="f money"><span>Worth</span><span class="pre">R</span><input id="g-val" inputmode="decimal" placeholder="Optional" value="${esc(f.value!=null&&f.value!==""?amtInput(f.value):"")}"></label></div>
+      <div class="foot">What the thing in this group would sell for today, e.g. the boat itself. Leave empty for running costs like fuel.</div></div>
+      ${!isNew?`<button class="btn danger" id="g-del" ${used?"disabled":""}>${used?`Move or delete its ${used} purchase${used>1?"s":""} first`:"Delete group"}</button>`:""}
+    </div></div>`;
+  document.body.insertAdjacentHTML("beforeend",html);
+  const sc=$("#gs-scrim"), sh=$("#gs"); requestAnimationFrame(()=>{ sc.classList.add("on"); sh.classList.add("on"); });
+  const close=()=>{ sc.classList.remove("on"); sh.classList.remove("on"); setTimeout(()=>{sc.remove();sh.remove();},360); };
+  sc.onclick=close; $("#gs-c").onclick=close;
+  sh.querySelectorAll(".sw").forEach(b=>b.onclick=()=>{ f.color=b.dataset.c; sh.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-pressed",x===b)); });
+  sh.querySelector("#g-val").onblur=e=>{ const n=parseAmount(e.target.value); e.target.value=isNaN(n)?"":amtInput(n); };
+  const del=$("#g-del"); if(del&&!used) del.onclick=async()=>{ S.groups=S.groups.filter(x=>x.id!==g.id); if(S.ui.group===g.id) S.ui.group="all"; await saveGroups(); close(); refresh(); };
+  $("#gs-s").onclick=async()=>{ const n=$("#g-name").value.trim(); if(!n){ const e=$("#g-err"); e.textContent="Name the group."; e.hidden=false; return; }
+    const v=parseAmount($("#g-val").value); const out={id:f.id,name:n,color:f.color}; if(!isNaN(v)) out.value=v;
+    if(isNew) S.groups.push(out); else S.groups=S.groups.map(x=>x.id===f.id?out:x);
+    await saveGroups(); close(); refresh(); };
+}
+
+
+/* ===== VALUE OVER TIME ===== */
+const APP_URL = location.origin + location.pathname;
+const monthKey = (d=new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+const monthLabel = k => { const [y,m]=k.split("-").map(Number); return `${MONTHS[m-1]} ’${String(y).slice(2)}`; };
+const shortR = n => { const a=Math.abs(n); return "R "+(a>=1e6?(+(n/1e6).toFixed(a>=1e7?0:1))+"m":a>=1e3?Math.round(n/1e3)+"k":Math.round(n)); };
+function computeSnapshot(){
+  const act=S.machines.filter(m=>m.status!=="sold"); const depts={};
+  const sum=(xs,k)=>Math.round(xs.reduce((a,m)=>a+(+m[k]||0),0));
+  for(const m of act){ const d=m.dept||"No department"; (depts[d]=depts[d]||[]).push(m); }
+  const out={month:monthKey(),repl:sum(act,"repl"),resale:sum(act,"resale"),paid:sum(act,"paid"),count:act.length,depts:{}};
+  for(const [d,ms] of Object.entries(depts)) out.depts[d]={repl:sum(ms,"repl"),resale:sum(ms,"resale"),paid:sum(ms,"paid"),n:ms.length};
+  return out;
+}
+let snapT=null;
+function scheduleSnapshot(){
+  if(!S.canWrite || !S.histReady || !S.ready.biz || !S.machines.length) return;
+  clearTimeout(snapT); snapT=setTimeout(writeSnapshot,5000);
+}
+async function writeSnapshot(){
+  const s=computeSnapshot(); const cur=S.history.find(h=>h.id===s.month);
+  if(cur && cur.repl===s.repl && cur.resale===s.resale && cur.paid===s.paid && cur.count===s.count && JSON.stringify(cur.depts||{})===JSON.stringify(s.depts)) return;
+  try{ await S.db.doc("history/"+s.month).set({...s,updated:new Date().toISOString()}); }catch{}
+}
+function valueSection(){
+  const mode=S.ui.vt;
+  return `<div class="section-h"><h2>Value over time</h2></div>
+  <div class="card vt">
+    <div class="vt-top">
+      <div class="seg2" role="group" aria-label="Chart">
+        <button data-vt="history" aria-pressed="${mode==="history"}">Value history</button>
+        <button data-vt="bought" aria-pressed="${mode==="bought"}">Bought per year</button>
+      </div>
+      <div class="vt-legend" id="vt-legend"></div>
+    </div>
+    <div class="vt-chart" id="vt-chart"></div>
+    <p class="vt-foot" id="vt-foot"></p>
+  </div>`;
+}
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function niceMax(v){ if(v<=0) return 1; const p=Math.pow(10,Math.floor(Math.log10(v))); const f=v/p; return ([1,1.2,1.6,2,2.4,3,4,5,6,8,10].find(x=>f<=x))*p; }
+function drawValueChart(){
+  const el=$("#vt-chart"), lg=$("#vt-legend"), ft=$("#vt-foot"); if(!el) return;
+  const W=Math.max(260,el.clientWidth||600), H=210, padL=52, padR=12, padT=12, padB=26;
+  const iw=W-padL-padR, ih=H-padT-padB;
+  const tipHTML = rows => rows.map(r=>`<div class="tr">${r.c?`<i style="background:${r.c}"></i>`:""}<span>${r.k}</span><b>${r.v}</b></div>`).join("");
+  const axis=(max)=>{ let g=""; for(let i=0;i<=4;i++){ const v=max*i/4, y=padT+ih-(ih*i/4); g+=`<line x1="${padL}" x2="${W-padR}" y1="${y}" y2="${y}" class="grid"/><text x="${padL-8}" y="${y+4}" class="yl" text-anchor="end">${i?shortR(v):"0"}</text>`; } return g; };
+
+  if(S.ui.vt==="bought"){
+    const act=S.machines.filter(m=>m.status!=="sold");
+    const dated=act.filter(m=>/^\d{4}/.test(m.bought||"")), undated=act.length-dated.length;
+    const undatedV=act.filter(m=>!/^\d{4}/.test(m.bought||"")).reduce((a,m)=>a+(+m.paid||0),0);
+    if(!dated.length){ el.innerHTML=`<div class="vt-empty">Add purchase dates to see what was bought each year.</div>`; lg.innerHTML=""; ft.textContent=""; return; }
+    const y0=Math.min(...dated.map(m=>+m.bought.slice(0,4))), y1=new Date().getFullYear();
+    const years=[]; for(let y=y0;y<=y1;y++) years.push(y);
+    const vals=years.map(y=>dated.filter(m=>+m.bought.slice(0,4)===y)), sums=vals.map(ms=>ms.reduce((a,m)=>a+(+m.paid||0),0));
+    const max=niceMax(Math.max(...sums)); const n=years.length, slot=iw/n, bw=Math.max(2,Math.min(28,slot-2));
+    const c=cssVar("--s1"); const step=Math.ceil(n/Math.max(1,Math.floor(iw/40)));
+    let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Amount paid for machines, by year bought">${axis(max)}`;
+    years.forEach((y,i)=>{ const v=sums[i]; const x=padL+i*slot+(slot-bw)/2; const h=v?Math.max(2,ih*v/max):0; const yy=padT+ih-h; const r=Math.min(4,bw/2,h);
+      const selY=S.ui.year; const cls = selY==null||selY==="none" ? "" : (String(y)===String(selY) ? " sel" : " dim");
+      if(h) s+=`<path d="M${x},${padT+ih} V${yy+r} Q${x},${yy} ${x+r},${yy} H${x+bw-r} Q${x+bw},${yy} ${x+bw},${yy+r} V${padT+ih} Z" fill="${c}" class="bar${cls}" data-i="${i}"/>`;
+      if(i%step===0 || i===n-1 && (n-1)%step>step/2) s+=`<text x="${x+bw/2}" y="${H-8}" class="xl" text-anchor="middle">${y}</text>`; });
+    years.forEach((y,i)=>{ s+=`<rect x="${padL+i*slot}" y="${padT}" width="${slot}" height="${H-padT}" fill="transparent" class="hit" data-i="${i}" tabindex="0" role="button" aria-label="${y}: show machines bought that year"/>`; });
+    s+=`</svg><div class="vt-tip" hidden></div>`;
+    el.innerHTML=s; lg.innerHTML=`<span><i style="background:${c}"></i>Paid that year</span>`;
+    ft.innerHTML=`Tap a year to list the machines bought that year. ${undated?`<button data-nodate>${undated} machine${undated>1?"s have":" has"} no purchase date</button> (${money(undatedV,false)}) and ${undated>1?"aren’t":"isn’t"} shown.`:""}`;
+    const nd=ft.querySelector("[data-nodate]"); if(nd) nd.onclick=()=>setYear("none");
+    const tip=el.querySelector(".vt-tip"); let cum=[]; sums.reduce((a,v,i)=>(cum[i]=a+v),0);
+    el.querySelectorAll(".hit").forEach(h=>{ h.addEventListener("click",()=>setYear(String(years[+h.dataset.i]))); h.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); setYear(String(years[+h.dataset.i])); } });
+      const show=()=>{ const i=+h.dataset.i;
+        tip.innerHTML=`<div class="th">${years[i]}</div>`+tipHTML([{k:"Paid",v:money(sums[i],false),c},{k:"Machines",v:vals[i].length},{k:"Total so far",v:money(cum[i],false)}])+`<div class="tf">Tap to see these machines</div>`;
+        tip.hidden=false; const x=padL+i*slot+slot/2; tip.style.left=Math.min(Math.max(x-tip.offsetWidth/2,0),W-tip.offsetWidth)+"px"; };
+      h.addEventListener("pointerenter",show); h.addEventListener("focus",show); });
+    el.addEventListener("pointerleave",()=>{ tip.hidden=true; });
+    return;
+  }
+
+  // value history (monthly snapshots)
+  const pts=[...S.history].sort((a,b)=>a.id.localeCompare(b.id));
+  const c1=cssVar("--s1"), c2=cssVar("--s2"), c3=cssVar("--fg-3");
+  const ser=[{k:"repl",name:"Replacement",c:c1},{k:"resale",name:"Second-hand",c:c2},{k:"paid",name:"Paid",c:c3,dash:true}];
+  lg.innerHTML=ser.map(x=>`<span><i style="background:${x.c}"></i>${x.name}</span>`).join("");
+  if(pts.length<2){
+    const p=pts[0]||(S.machines.length?computeSnapshot():null);
+    el.innerHTML = p ? `<div class="vt-first">${ser.map(x=>`<div><span><i style="background:${x.c}"></i>${x.name}</span><b>${money(p[x.k],false)}</b></div>`).join("")}</div>
+      <div class="vt-empty">Tracking started ${esc(monthLabel(p.month||p.id))}. The app saves the totals each month, so the line appears from next month.</div>` : `<div class="vt-empty">Add machines to start tracking value.</div>`;
+    ft.textContent=""; return;
+  }
+  const max=niceMax(Math.max(...pts.flatMap(p=>ser.map(x=>p[x.k]||0))));
+  const n=pts.length, X=i=>padL+(n===1?iw/2:iw*i/(n-1)), Y=v=>padT+ih-ih*(v||0)/max;
+  const step=Math.ceil(n/Math.max(1,Math.floor(iw/56)));
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Replacement, second-hand and paid totals by month">${axis(max)}`;
+  pts.forEach((p,i)=>{ if(i%step===0||i===n-1) s+=`<text x="${X(i)}" y="${H-8}" class="xl" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${monthLabel(p.id)}</text>`; });
+  for(const x of ser){ s+=`<path d="${pts.map((p,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(p[x.k]).toFixed(1)).join(" ")}" fill="none" stroke="${x.c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" ${x.dash?'stroke-dasharray="5 4"':""}/>`;
+    const last=pts[n-1]; s+=`<circle cx="${X(n-1)}" cy="${Y(last[x.k])}" r="4" fill="${x.c}" stroke="${cssVar("--surface")}" stroke-width="2"/>`; }
+  s+=`<line class="xh" x1="0" x2="0" y1="${padT}" y2="${padT+ih}" visibility="hidden"/><g class="hdots"></g><rect class="hitall" x="${padL}" y="${padT}" width="${iw}" height="${ih}" fill="transparent"/></svg><div class="vt-tip" hidden></div>`;
+  el.innerHTML=s;
+  const first=pts[0], last=pts[n-1], dRepl=last.repl-first.repl, dRes=last.resale-first.resale;
+  ft.innerHTML=`Since ${esc(monthLabel(first.id))}: replacement ${dRepl>=0?"up":"down"} ${money(Math.abs(dRepl),false)}, second-hand ${dRes>=0?"up":"down"} ${money(Math.abs(dRes),false)}.`;
+  const svg=el.querySelector("svg"), tip=el.querySelector(".vt-tip"), xh=svg.querySelector(".xh"), hd=svg.querySelector(".hdots");
+  const move=e=>{ const r=svg.getBoundingClientRect(); const px=(e.clientX-r.left)*W/r.width; const i=Math.max(0,Math.min(n-1,Math.round((px-padL)/(iw/(n-1)))));
+    const p=pts[i]; xh.setAttribute("x1",X(i)); xh.setAttribute("x2",X(i)); xh.setAttribute("visibility","visible");
+    hd.innerHTML=ser.map(x=>`<circle cx="${X(i)}" cy="${Y(p[x.k])}" r="4.5" fill="${x.c}" stroke="${cssVar("--surface")}" stroke-width="2"/>`).join("");
+    tip.innerHTML=`<div class="th">${esc(monthLabel(p.id))} · ${p.count} machines</div>`+tipHTML(ser.map(x=>({k:x.name,v:money(p[x.k],false),c:x.c})));
+    tip.hidden=false; tip.style.left=Math.min(Math.max(X(i)*r.width/W-tip.offsetWidth/2,0),r.width-tip.offsetWidth)+"px"; };
+  svg.addEventListener("pointermove",move); svg.addEventListener("pointerdown",move);
+  svg.addEventListener("pointerleave",()=>{ tip.hidden=true; xh.setAttribute("visibility","hidden"); hd.innerHTML=""; });
+}
+let vtResize; window.addEventListener("resize",()=>{ clearTimeout(vtResize); vtResize=setTimeout(()=>{ if(S.side==="biz") drawValueChart(); },150); });
+
+/* ===== QR STICKERS ===== */
+const machineLink = m => APP_URL + "#m-" + m.id;
+function qrSvg(text, cls=""){
+  if(typeof window.qrcode!=="function") return `<div class="qr-miss">QR unavailable</div>`;
+  const q=window.qrcode(0,"M"); q.addData(text); q.make(); const n=q.getModuleCount(), m=2; let d="";
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(q.isDark(r,c)) d+=`M${c+m},${r+m}h1v1h-1z`;
+  return `<svg class="${cls}" viewBox="0 0 ${n+2*m} ${n+2*m}" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+}
+const PER_SHEET=21;
+function stickerLabel(m){
+  return `<div class="l">${qrSvg(machineLink(m))}<div class="tx"><div class="t">${esc(m.tag||"")}</div><div class="n">${esc(m.name||"Machine")}</div><div class="d">${esc([m.dept, m.serial?("S/N "+m.serial):""].filter(Boolean).join(" · "))}</div></div></div>`;
+}
+function buildStickerHtml(list,start){
+  const cells=[...Array(Math.max(0,start-1)).fill(null), ...list];
+  const pages=[]; for(let i=0;i<cells.length;i+=PER_SHEET) pages.push(cells.slice(i,i+PER_SHEET));
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Machine stickers</title><style>
+@page{size:A4;margin:0}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#111}
+.help{font-size:14px;line-height:1.5;max-width:210mm;margin:10mm auto 0;padding:12px 16px;background:#fff8e6;border:1px solid #f0d48a;border-radius:8px}
+.page{width:210mm;height:297mm;padding:15.1mm 7.2mm 0;display:grid;grid-template-columns:repeat(3,63.5mm);grid-auto-rows:38.1mm;column-gap:2.5mm;break-after:page;page-break-after:always;overflow:hidden}
+.page:last-child{break-after:auto;page-break-after:auto}
+.l{padding:2.5mm 3mm;display:flex;gap:2.5mm;align-items:center;overflow:hidden}
+.l svg{width:31mm;height:31mm;flex:none}
+.tx{min-width:0}
+.t{font-weight:700;font-size:11pt;letter-spacing:.02em}
+.n{font-size:8.5pt;line-height:1.2;max-height:3.6em;overflow:hidden;margin-top:1mm;font-weight:600}
+.d{font-size:7pt;color:#444;margin-top:1mm;line-height:1.25}
+@media screen{body{background:#e9e9ee}.page{background:#fff;margin:8mm auto;box-shadow:0 2px 12px rgba(0,0,0,.15)}.l{outline:1px dashed #d5d5dc;outline-offset:-1px}}
+@media print{.help{display:none}}
+</style></head><body>
+<div class="help"><b>${list.length} sticker${list.length>1?"s":""} on ${pages.length} sheet${pages.length>1?"s":""}.</b> Print on A4 label sheets with 21 labels (63.5 × 38.1 mm, e.g. Avery L7160 or Tower W121). In the print window choose <b>Actual size / 100%</b>, not "Fit to page". Do a test print on plain paper first and hold it against a label sheet. Scanning a sticker opens that machine in the Asset Ledger; the person scanning needs a login.</div>
+${pages.map(p=>`<div class="page">${p.map(m=>m?stickerLabel(m):`<div class="l"></div>`).join("")}</div>`).join("")}
+</body></html>`;
+}
+async function downloadStickers(list,start,name){
+  if(!list.length){ toast("No machines to print"); return; }
+  if(typeof window.qrcode!=="function"){ toast("QR codes couldn’t load. Reload the page and try again."); return; }
+  if(!S.downloads){ toast("Downloads aren’t available here. Try on a computer."); return; }
+  try{ await S.downloads.save({filename:name,data:buildStickerHtml(list,start)}); toast("Sticker sheet saved. Open it and print."); }
+  catch(e){ if(e&&e.code!=="declined") toast("The download didn’t work here. Try on a computer."); }
+}
+function stickerSheet(preselect){
+  const depts=[...new Set(S.machines.map(m=>m.dept||""))].sort((a,b)=>deptLabel(a).localeCompare(deptLabel(b)));
+  const sel=new Set(preselect||[]); let mode=preselect&&preselect.length?"pick":"dept", q="";
+  const sortM=l=>l.sort((a,b)=>deptLabel(a.dept).localeCompare(deptLabel(b.dept))||(a.tag||"").localeCompare(b.tag||"")||(a.name||"").localeCompare(b.name||""));
+  const active=()=>S.machines.filter(m=>m.status!=="sold");
+  const pick=()=>{
+    if(mode==="pick") return sortM(active().filter(m=>sel.has(m.id)));
+    const d=$("#st-dept").value, tagged=$("#st-tag").checked;
+    return sortM(active().filter(m=>(d==="__all"||(m.dept||"")===d) && (!tagged||m.tag)));
+  };
+  openSheet({title:"QR stickers", left:"Close", body:`
+    <div class="fg"><div class="foot" style="padding:0 4px">Each sticker has a QR code that opens that machine’s page when scanned with a phone camera. You get a file to open on a computer and print on A4 label sheets (21 per sheet).</div></div>
+    <div class="seg2 st-mode" role="group" aria-label="Which machines"><button data-mode="dept">By department</button><button data-mode="pick">Pick machines</button></div>
+    <div class="fg" id="st-deptbox"><div class="inset">
+      <label class="f"><span>Department</span><select id="st-dept"><option value="__all">All departments</option>${depts.map(d=>`<option value="${esc(d)}">${esc(deptLabel(d))}</option>`).join("")}</select></label>
+      <div class="f"><span>Only with asset tag</span><label class="toggle"><input type="checkbox" id="st-tag" aria-label="Only machines with an asset tag"><i></i></label></div>
+    </div></div>
+    <div class="fg" id="st-pickbox">
+      <label class="search"><svg class="i"><use href="#i-search"/></svg><input id="st-q" type="search" placeholder="Search machines to add…" autocomplete="off"></label>
+      <div class="pick-bar"><span id="st-count">0 selected</span><button id="st-clear">Clear</button></div>
+      <div class="inset pick-list" id="st-list"></div>
+    </div>
+    <div class="fg"><div class="inset"><label class="f"><span>Start at label</span><input id="st-start" type="number" inputmode="numeric" min="1" max="21" value="1"></label></div>
+      <div class="foot">Use “Start at label” to finish a sheet you’ve already partly used (1 = top left, counting across).</div></div>
+    <div class="fg"><div class="cap">Preview</div><div class="inset"><div class="lbl-prev" id="st-prev"></div></div></div>
+    <button class="btn" id="st-go"><svg class="i"><use href="#i-qr"/></svg><span id="st-lbl">Download stickers</span></button>`,
+    onMount:(el)=>{
+      const drawList=()=>{ const ql=q.trim().toLowerCase();
+        const rows=sortM(active().filter(m=>!ql||[m.name,m.tag,m.dept,m.serial,m.make,m.model].join(" ").toLowerCase().includes(ql)));
+        rows.sort((a,b)=>(sel.has(b.id)-sel.has(a.id)));
+        $("#st-list").innerHTML = rows.slice(0,80).map(m=>`<label class="pick-row"><input type="checkbox" data-id="${esc(m.id)}" ${sel.has(m.id)?"checked":""}><span class="pk-t"><b>${esc(m.name||"Machine")}</b><small>${esc([m.tag,deptLabel(m.dept),m.serial?"S/N "+m.serial:""].filter(Boolean).join(" · "))}</small></span></label>`).join("")
+          + (rows.length>80?`<div class="foot" style="padding:10px 16px">Showing 80 of ${rows.length}. Search to narrow down.</div>`:"") + (!rows.length?`<div class="foot" style="padding:12px 16px">No machines match.</div>`:"");
+        $("#st-list").querySelectorAll("input[data-id]").forEach(c=>c.onchange=()=>{ c.checked?sel.add(c.dataset.id):sel.delete(c.dataset.id); upd(); }); };
+      const upd=()=>{
+        el.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===mode));
+        $("#st-deptbox").hidden = mode!=="dept"; $("#st-pickbox").hidden = mode!=="pick";
+        $("#st-count").textContent=`${sel.size} selected`;
+        const l=pick(); const st=Math.min(21,Math.max(1,+$("#st-start").value||1)); const pages=Math.ceil((l.length+st-1)/PER_SHEET);
+        $("#st-lbl").textContent=l.length?`Download ${l.length} sticker${l.length>1?"s":""} · ${pages} sheet${pages>1?"s":""}`:(mode==="pick"?"Tick the machines you want":"No machines match");
+        $("#st-go").disabled=!l.length;
+        $("#st-prev").innerHTML=l.slice(0,3).map(m=>`<div class="lbl">${qrSvg(machineLink(m))}<div><b>${esc(m.tag||"")}</b><span>${esc(m.name||"")}</span><small>${esc([m.dept,m.serial?"S/N "+m.serial:""].filter(Boolean).join(" · "))}</small></div></div>`).join("")+(l.length>3?`<p class="foot" style="padding:0 2px">+ ${l.length-3} more</p>`:"")||`<p class="foot" style="padding:12px 4px">Nothing to show.</p>`; };
+      el.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{ mode=b.dataset.mode; if(mode==="pick") drawList(); upd(); });
+      ["st-dept","st-tag","st-start"].forEach(id=>{ const i=el.querySelector("#"+id); i.oninput=upd; i.onchange=upd; });
+      el.querySelector("#st-q").oninput=e=>{ q=e.target.value; drawList(); };
+      el.querySelector("#st-clear").onclick=()=>{ sel.clear(); drawList(); upd(); };
+      el.querySelector("#st-go").onclick=()=>{ const l=pick(); const st=Math.min(21,Math.max(1,+$("#st-start").value||1));
+        const nm = mode==="pick" ? `machine-stickers-${l.length}.html` : (()=>{ const d=$("#st-dept").value; return `machine-stickers-${d==="__all"?"all":deptLabel(d).toLowerCase().replace(/[^a-z0-9]+/g,"-")}.html`; })();
+        downloadStickers(l, st, nm); };
+      drawList(); upd();
+    }});
+}
+let deepDone=false;
+function handleDeepLink(){
+  const h=(location.hash||"").slice(1); if(!h.startsWith("m-") || !S.ready.biz) return;
+  const m=S.machines.find(x=>x.id===h.slice(2));
+  try{ history.replaceState(null,"",location.pathname+location.search); }catch{}
+  if(!m){ toast("That machine isn’t in the register any more."); return; }
+  if(S.side!=="biz"){ S.side="biz"; store.set("al.side","biz"); applySide(); render(); }
+  setTimeout(()=>machineDetail(m.id),60);
+}
+window.addEventListener("hashchange",handleDeepLink);
+
+/* ---------- export + more ---------- */
+function csv(rows){ return rows.map(r=>r.map(v=>{ const s=String(v??""); return /[",\n;]/.test(s)?`"${s.replace(/"/g,'""')}"`:s; }).join(",")).join("\r\n"); }
+async function exportCsv(kind){
+  if(!S.downloads){ toast("Downloads aren’t available here"); return; }
+  let data,name;
+  if(kind==="biz"){
+    const rows=[["Asset tag","Name","Department","Make","Model","Year model","Serial","Status","Date bought","Bought as","Supplier","Supplier location","Invoice","Warranty until","Paid (R)","Replacement cost (R)","Replacement checked","Second-hand value (R)","Second-hand checked","Insured","Location","Notes","Photos"]];
+    for(const m of [...S.machines].sort((a,b)=>(a.tag||"").localeCompare(b.tag||""))) rows.push([m.tag,m.name,m.dept,m.make,m.model,m.yearModel||"",m.serial,STATUS[m.status||"use"],m.bought,m.boughtUsed?"Second-hand":"New",m.supplier,m.supplierLoc,m.invoice,m.warranty,(+m.paid||0).toFixed(2),(+m.repl||0).toFixed(2),m.replUpdated,(+m.resale||0).toFixed(2),m.resaleUpdated||"",m.insured?"Yes":"No",m.location,m.notes,(m.photos||[]).length]);
+    data=csv(rows); name=`machine-register-${today()}.csv`;
+  } else {
+    const gm=Object.fromEntries(S.groups.map(g=>[g.id,g.name]));
+    const rows=[["Date","Group","Item","Where","Amount (R)","Notes"]];
+    for(const e of [...S.entries].sort((a,b)=>(a.date||"").localeCompare(b.date||""))) rows.push([e.date,gm[e.group]||"",e.title,e.vendor,(+e.amount||0).toFixed(2),e.note]);
+    data=csv(rows); name=`personal-spending-${today()}.csv`;
+  }
+  try{ await S.downloads.save({filename:name,data:"﻿"+data}); toast("Exported"); }
+  catch(e){ if(e&&e.code!=="declined") toast("Export didn’t work here. Try on a computer."); }
+}
+function moreSheet(){
+  const isB=S.side==="biz";
+  const opts=[{label:isB?"Export machine register (CSV)":"Export my spending (CSV)", run:()=>exportCsv(S.side), disabled:!S.downloads}];
+  if(isB && S.canWrite) opts.push({label:"Edit departments", run:()=>listEditor("dept")});
+  if(!isB && S.canMe) opts.push({label:"Edit groups", run:()=>listEditor("group")});
+  if(isB && S.machines.length) opts.push({label:"Print QR stickers", run:()=>stickerSheet()});
+  opts.push({label:S.hide?"Show amounts":"Hide amounts", run:()=>$("#eye").click()});
+  if(isB) opts.push({label:"Import backup file", run:()=>pickBackup()});
+  opts.push({label:"Sign out", danger:true, run:async()=>{ await sb.auth.signOut(); }});
+  actionSheet((isB?"Business · machine register":"Personal · private to you")+(S.user?" · "+S.user.email:""),opts);
+}
+
+/* ---------- sheets ---------- */
+let current=null;
+function openSheet({title,left,right,onLeft,onRight,body,onMount}){
+  closeSheet(true,true);
+  const sc=document.createElement("div"); sc.className="scrim";
+  const sh=document.createElement("div"); sh.className="sheet"; sh.setAttribute("role","dialog"); sh.setAttribute("aria-modal","true");
+  sh.innerHTML=`<div class="sheet-h"><button class="l">${left||""}</button><h3>${title}</h3>${right?`<button class="r">${right}</button>`:"<span></span>"}</div><div class="sheet-b">${body}</div>`;
+  document.body.append(sc,sh); document.body.style.overflow="hidden";
+  requestAnimationFrame(()=>{ sc.classList.add("on"); sh.classList.add("on"); });
+  current={sc,sh,onLeft};
+  const cancel=async()=>{ if(onLeft) await onLeft(); closeSheet(true); };
+  sc.onclick=cancel; sh.querySelector(".l").onclick=cancel;
+  const r=sh.querySelector(".r"); if(r) r.onclick=async()=>{ r.disabled=true; const ok=await onRight(); if(ok===false) r.disabled=false; };
+  onMount&&onMount(sh.querySelector(".sheet-b"));
+}
+function closeSheet(_,instant){
+  if(!current) return; const {sc,sh}=current; current=null;
+  sc.classList.remove("on"); sh.classList.remove("on"); document.body.style.overflow="";
+  if(instant){ sc.remove(); sh.remove(); } else setTimeout(()=>{ sc.remove(); sh.remove(); sweepOverlays(); },360);
+}
+function actionSheet(msg,opts){
+  const sc=document.createElement("div"); sc.className="scrim as-scrim";
+  const as=document.createElement("div"); as.className="as"; as.setAttribute("role","dialog");
+  as.innerHTML=`<div class="grp">${msg?`<div class="msg">${esc(msg)}</div>`:""}${opts.map((o,i)=>`<button data-i="${i}" class="${o.danger?"d":""}" ${o.disabled?"disabled style='color:var(--fg-3)'":""}>${esc(o.label)}</button>`).join('<div style="height:1px;background:var(--line)"></div>')}</div><div class="grp"><button class="c">Cancel</button></div>`;
+  document.body.append(sc,as); requestAnimationFrame(()=>{sc.classList.add("on");as.classList.add("on");});
+  const close=()=>{ sc.classList.remove("on"); as.classList.remove("on"); setTimeout(()=>{sc.remove();as.remove();},320); };
+  sc.onclick=close; as.querySelector(".c").onclick=close;
+  as.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{ const o=opts[+b.dataset.i]; close(); if(o.run) setTimeout(o.run,180); });
+}
+function confirmSheet(msg,label,run){ actionSheet(msg,[{label,danger:true,run}]); }
+function askText(title,ph,val,cb){
+  const sc=document.createElement("div"); sc.className="scrim as-scrim";
+  const as=document.createElement("div"); as.className="as";
+  as.innerHTML=`<div class="grp" style="padding:16px;display:flex;flex-direction:column;gap:12px"><b style="text-align:center;font-size:17px">${esc(title)}</b>
+    <input id="ask-in" placeholder="${esc(ph)}" value="${esc(val)}" style="height:44px;border-radius:10px;border:0;background:var(--surface-2);padding:0 12px;font-size:16px;outline:0">
+    <button class="btn" id="ask-ok" style="width:100%">Save</button></div><div class="grp"><button class="c">Cancel</button></div>`;
+  document.body.append(sc,as); requestAnimationFrame(()=>{sc.classList.add("on");as.classList.add("on"); setTimeout(()=>$("#ask-in").focus(),200);});
+  const close=v=>{ sc.classList.remove("on"); as.classList.remove("on"); setTimeout(()=>{sc.remove();as.remove();},320); cb(v); };
+  sc.onclick=()=>close(null); as.querySelector(".c").onclick=()=>close(null);
+  const ok=()=>close($("#ask-in").value.trim()||null); $("#ask-ok").onclick=ok; $("#ask-in").onkeydown=e=>{ if(e.key==="Enter") ok(); };
+}
+// Safety net: never leave a dimmed screen behind. Clear any leftover overlays on start,
+// remove a shade that has nothing on top of it, and let a tap on an orphaned shade dismiss it.
+function sweepOverlays(){
+  const live = current || document.querySelector(".as.on, #gs.on, .viewer");
+  if(!live){ document.querySelectorAll(".scrim").forEach(s=>s.remove()); document.querySelectorAll(".sheet:not(.on), .as:not(.on)").forEach(s=>s.remove()); document.body.style.overflow=""; }
+}
+document.querySelectorAll(".scrim,.sheet,.as,.viewer").forEach(e=>e.remove()); document.body.style.overflow="";
+document.addEventListener("click",e=>{ const t=e.target; if(t && t.classList && t.classList.contains("scrim") && !t.onclick){ t.remove(); sweepOverlays(); } });
+let sweepStrikes=0;
+setInterval(()=>{ const stray=document.querySelector(".scrim") && !(current || document.querySelector(".as.on, #gs.on, .viewer")); sweepStrikes = stray ? sweepStrikes+1 : 0; if(sweepStrikes>=2){ sweepStrikes=0; sweepOverlays(); } }, 1000);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) sweepOverlays(); });
+document.addEventListener("keydown",e=>{
+  if(viewerClose){ if(e.key==="Escape") viewerClose.close(); else if(e.key==="ArrowRight") viewerClose.go(1); else if(e.key==="ArrowLeft") viewerClose.go(-1); return; }
+  if(e.key==="Escape" && current){ const l=current.sh.querySelector(".l"); l&&l.click(); } });
+
+render(); boot();
+})();
+</script>
+</body>
+</html>

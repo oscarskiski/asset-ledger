@@ -474,8 +474,8 @@ const S = {
 
 /* ---------- Supabase connection ----------
    STEP: paste your two values from Supabase → Project Settings → API (Data API) */
-const SUPABASE_URL = "PASTE-PROJECT-URL-HERE";        // looks like https://abcdefghijklm.supabase.co
-const SUPABASE_ANON_KEY = "PASTE-ANON-PUBLIC-KEY-HERE"; // the long "anon" / "public" key (starts with eyJ…)
+const SUPABASE_URL = "https://djtiajocobwhhspcpdec.supabase.co";        // looks like https://abcdefghijklm.supabase.co
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqdGlham9jb2J3aGhzcGNwZGVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzOTYyMDksImV4cCI6MjEwNzk3MjIwOX0.mh2m70HEbl3PHUzjOaXeD34rr4uD9o3b2uFAhEx3rgE"; // the long "anon" / "public" key (starts with eyJ…)
 const BUCKET = "machine-photos";
 let sb = null;
 const configured = () => /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(SUPABASE_URL) && SUPABASE_ANON_KEY.length > 40;

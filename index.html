@@ -447,7 +447,7 @@ function parseAmount(v){
   else if (s.includes(",")) { const p = s.split(","); s = (p.length===2 && p[1].length<=2) ? p[0]+"."+p[1] : p.join(""); }
   const n = Number(s); return isFinite(n) ? Math.round(n*100)/100 : NaN;
 }
-const amtInput = n => (n||n===0) && n!=="" ? fmt.format(n).replace(/ /g," ") : "";
+const amtInput = n => (n||n===0) && n!=="" && isFinite(+n) ? groupMoneyText((+n).toFixed(2).replace(".",",")) : "";
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
 const niceDate = iso => { if(!iso) return ""; const [y,m,d] = iso.split("-").map(Number); if(!y) return ""; return `${d?d+" ":""}${MONTHS[(m||1)-1]} ${y}`; };
 function ageOf(iso){
@@ -1364,6 +1364,27 @@ function moreSheet(){
   opts.push({label:"Sign out", danger:true, run:async()=>{ await sb.auth.signOut(); }});
   actionSheet((isB?"Business · machine register":"Personal · private to you")+(S.user?" · "+S.user.email:""),opts);
 }
+
+/* ---------- money fields: group thousands while typing ---------- */
+function groupMoneyText(raw){
+  let v=String(raw).replace(/[^\d.,]/g,"");
+  const i=v.search(/[.,]/);
+  let int=i<0?v:v.slice(0,i), dec=i<0?null:v.slice(i+1).replace(/[.,]/g,"").slice(0,2);
+  int=int.replace(/^0+(?=\d)/,"");
+  if(dec!==null && !int) int="0";
+  int=int.replace(/\B(?=(\d{3})+(?!\d))/g," ");
+  return dec===null?int:int+","+dec;
+}
+document.addEventListener("input",e=>{
+  const el=e.target; if(!el.matches||!el.matches(".money input")) return;
+  const before=el.value, caret=el.selectionStart??before.length;
+  const keep=before.slice(0,caret).replace(/[^\d.,]/g,"").length;   // digits/commas left of the cursor
+  const next=groupMoneyText(before); if(next===before) return;
+  el.value=next;
+  let n=0,pos=0; while(pos<next.length && n<keep){ if(/[\d,]/.test(next[pos])) n++; pos++; }
+  try{ el.setSelectionRange(pos,pos); }catch{}
+});
+document.addEventListener("focusin",e=>{ const el=e.target; if(el.matches&&el.matches(".money input") && /,00$/.test(el.value)) el.value=el.value.slice(0,-3); });
 
 /* ---------- sheets ---------- */
 let current=null;

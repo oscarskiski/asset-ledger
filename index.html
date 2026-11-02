@@ -208,6 +208,10 @@ body.hide-amts .amt-v{filter:blur(7px);transition:filter .2s}
 .f input::placeholder,.f textarea::placeholder{color:var(--fg-3)}
 .f.money input{font-variant-numeric:tabular-nums;font-weight:600;color:var(--fg)}
 .f .pre{color:var(--fg-3);font-weight:600}
+/* money rows: label takes what it needs, "R" stays small, the amount gets the room */
+.f.money>span:first-child{width:auto;flex:1 1 auto;min-width:0}
+.f.money>.pre{width:auto;flex:none;margin-left:auto}
+.f.money input{flex:0 1 auto;width:clamp(130px,50%,280px);min-width:0}
 .toggle{position:relative;width:51px;height:31px;flex:none;margin-left:auto}
 .toggle input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
 .toggle i{position:absolute;inset:0;border-radius:16px;background:var(--line-strong);transition:background .2s}
@@ -825,7 +829,7 @@ function machineForm(m){
     <div class="fg"><div class="cap">Value</div><div class="inset">
       <label class="f money"><span>Paid</span><span class="pre">R</span><input id="m-paid" inputmode="decimal" placeholder="0.00" value="${esc(amtInput(f.paid))}"></label>
       <label class="f money"><span>Cost to replace</span><span class="pre">R</span><input id="m-repl" inputmode="decimal" placeholder="0.00" value="${esc(amtInput(f.repl))}"></label>
-      <label class="f money"><span>Second-hand value</span><span class="pre">R</span><input id="m-resale" inputmode="decimal" placeholder="If we sold it" value="${esc(amtInput(f.resale))}"></label>
+      <label class="f money"><span>Second-hand</span><span class="pre">R</span><input id="m-resale" inputmode="decimal" placeholder="If we sold it" value="${esc(amtInput(f.resale))}"></label>
       <div class="f"><span>Insured</span><label class="toggle"><input type="checkbox" id="m-ins" ${f.insured?"checked":""} aria-label="Insured"><i></i></label></div>
     </div><div class="foot">Replacement cost = what a new equivalent machine costs today, delivered and installed. Second-hand value = what a buyer would realistically pay for this one as it stands.</div></div>
     <div class="fg"><div class="cap">Purchase</div><div class="inset">
